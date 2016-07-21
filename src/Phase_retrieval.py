@@ -34,7 +34,8 @@ class Zernike_func(object):
     def multi_zern(self, amps):
         self.pattern = libtim.zern.calc_zernike(amps, self.radius, mask = self.useMask, zern_data = {})
         return self.pattern
-
+#         RMSE[ii] = np.sqrt(np.var(PF_core))
+#         ii +=1
 
     def plot_zern(self):
         plt.imshow(self.pattern, interpolation='none')
@@ -56,9 +57,9 @@ class DM_simulate(object):
         if pattern is None:
             self.pattern = np.zeros((nPixels,nPixels))
         else: 
-            
-            MOD = interpolation.zoom(MOD,zoom,order=0,mode='nearest')
-            self.pattern = pattern
+            zoom = 256./np.float(pattern.shape[0])
+            MOD = interpolation.zoom(pattern,zoom,order=0,mode='nearest')
+            self.pattern = MOD
             
 
     def findSeg(self):
@@ -128,9 +129,18 @@ class PSF_PF(object):
     
         Pupil_final = _PupilFunction(complex_PF, self.PF)
         
+        self.pf_complex = Pupil_final.complex
         self.pf_phase = Pupil_final.phase
-        return self.pf_phase
+        self.pf_ampli = Pupil_final.amplitude
+        return Pupil_final
         
+    
+    def Strehl_ratio(self):
+        c_up = (self.pf_ampli.sum())**2
+        c_down = (self.pf_ampli**2).sum()*(len(np.where(self.pf_ampli>0)[0]))
+        
+        strehl = c_up/c_down
+        return strehl
     
 
 class _PupilFunction(object):

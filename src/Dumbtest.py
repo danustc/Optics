@@ -2,7 +2,7 @@
 # Later this will be shaped into a good simulator of optics system. 
 
 import os
-from Phase_retrieval import PSF_PF
+from Phase_retrieval import PSF_PF, DM_simulate
 from skimage.restoration import unwrap_phase
 import glob
 import numpy as np
@@ -18,6 +18,7 @@ def main():
     psf_list = glob.glob(path+"T*mod*.npy")
     psf_list.sort(key = os.path.getmtime) 
     RMSE = np.zeros(len(psf_list))
+    Strehl = np.zeros(len(psf_list))
     ii = 0
     session_list = []
     for psf_name in psf_list:
@@ -27,10 +28,15 @@ def main():
         psf = np.load(psf_name)
         Retrieve = PSF_PF(psf)
     
-        PF = unwrap_phase(Retrieve.retrievePF())
+        PF = unwrap_phase(Retrieve.retrievePF().phase)
+        Strehl[ii] = Retrieve.Strehl_ratio()
+        
+        print(Strehl[ii])
         PF_core = PF[64:192, 64:192]
+        dia_PF = 47
+        pattern = PF[128-dia_PF:128+dia_PF, 128-dia_PF:128+dia_PF]
         plt.figure(figsize=(5,4))
-        im = plt.imshow(PF_core, cmap = 'RdBu')
+        im = plt.imshow(pattern, cmap = 'RdBu')
         plt.tick_params(
                         axis = 'both',
                         which = 'both',
@@ -42,6 +48,28 @@ def main():
                         labelbottom = 'off')
         plt.colorbar(im)
         plt.savefig(path+session_name)
+        plt.clf()
+        
+        
+        DM = DM_simulate(12, 256, pattern)
+        segs = DM.findSeg()
+        im = plt.imshow(segs, cmap = 'RdBu', interpolation='none')
+        plt.tick_params(
+                        axis = 'both',
+                        which = 'both',
+                        bottom = 'off',
+                        top = 'off',
+                        right = 'off',
+                        left = 'off',
+                        labelleft='off',
+                        labelbottom = 'off')
+        plt.colorbar(im)
+        plt.savefig(path+session_name + '_seg')
+        
+        
+        
+        
+        
         plt.clf()
         
         plt.figure(figsize = (5,3.5))
@@ -59,16 +87,19 @@ def main():
         plt.close()
         
         
-        RMSE[ii] = np.sqrt(np.var(PF_core))
+        
+        
+        
+#         RMSE[ii] = np.sqrt(np.var(PF_core))
         ii +=1
 
     plt.figure(figsize=(7,4))
     lp = len(psf_list)
-    plt.plot(np.arange(lp-1),RMSE[:-1], 'b-x', linewidth=2)
+    plt.plot(np.arange(lp-1),Strehl[:-1], 'b-x', linewidth=2)
     ax = plt.gca()
     ax.set_xticks(np.arange(1,lp-1,3))
     ax.set_xticklabels(session_list[1:lp-1:3], rotation = 20)
-    plt.savefig(path+'RMSE')
+    plt.savefig(path+'Strehl')
     plt.show()
     
 if __name__ == "__main__":
