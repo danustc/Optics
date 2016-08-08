@@ -17,7 +17,7 @@ from scipy.ndimage import interpolation
 # a small zernike function
  
 class Zernike_func(object):
-    def __init__(self,radius, mask=True):
+    def __init__(self,radius, mask=False):
         self.radius = radius
         self.useMask = mask
         self.pattern = []
@@ -89,12 +89,14 @@ class PSF_PF(object):
         self.f = fl
         self.nIt = nIt
         self.PSF = PSF
-        self.nz, self.nx, self.ny = self.PSF.shape
+        self.nz, self.ny, self.nx = self.PSF.shape
+        
+        print(self.nz, self.ny, self.nx)
         self.PF=pupil.Simulation(self.nx,dx,ld,nrefrac,NA,fl,wavelengths=1) # initialize the pupil function
 
         
     
-    def retrievePF(self, bscale = 0.98, psf_diam = 40):
+    def retrievePF(self, bscale = 0.98, psf_diam = 60):
         # an ultrasimplified version
         cx, cy = np.unravel_index(self.PSF.argmax(), self.PSF.shape)[1:]
             # Intensity trace along z
@@ -111,14 +113,14 @@ class PSF_PF(object):
             # Fit gaussian to axial intensity trace
         popt = optimize.curve_fit(gaussian, z, i, p0)[0]
             # Where we think the emitter is axially located:
-        z_offset = -1.0*popt[1]
-        
+#         z_offset = -1.0*popt[1] # the measured focus 
+        z_offset = popt[1] # This should be the reason!!!! >_<
         A = self.PF.plane
         Mx, My = np.meshgrid(np.arange(self.nx)-self.nx/2., np.arange(self.nx)-self.nx/2.)
         r_pxl = _msqrt(Mx**2 + My**2)
         
-        bk_inner = psf_diam*1.65
-        bk_outer = psf_diam*1.85
+        bk_inner = psf_diam*1.50
+        bk_outer = psf_diam*2.00
         
         hcyl = np.array(self.nz*[np.logical_and(r_pxl>=bk_inner, r_pxl<bk_outer)])
         background = np.mean(self.PSF[hcyl])*bscale

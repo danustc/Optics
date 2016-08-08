@@ -8,6 +8,11 @@ from scipy import fftpack as _fftpack
 from scipy import ndimage
 from numpy.lib.scimath import sqrt as _msqrt
 import tempfile as _tempfile
+import matplotlib.pyplot as plt
+
+
+# mu_purpose = 0.01
+
 
 class Pupil(object):
 
@@ -327,6 +332,7 @@ class Simulation(Pupil):
 
     def __init__(self, nx=256, dx=0.1, l=0.68, n=1.33, NA=1.27, f=3333.33, wavelengths=10, wavelength_halfmax=0.005):
 
+        print("The pupil size:", nx)
         dx = float(dx)
         self.dx = dx
         l = float(l)
@@ -466,7 +472,7 @@ class Simulation(Pupil):
         ---------
         PSF: 3D numpy.array
             An intensity PSF stack. PSF.shape has to be
-            (nz, Simulation.nx, Simulation.nx), where nz is the arbitrary
+            (nz, psf_tools.nx, psf_tools.nx), where nz is the arbitrary
             number of z slices.
         dz: float
             The distance between two PSF slices.
@@ -474,8 +480,12 @@ class Simulation(Pupil):
             The noise level of the PSF.
         A: 2D numpy.array
             The initial guess for the complex pupil function with shape
-            (Simulation.nx, Simulation.nx).
+            (psf_tools.nx, psf_tools.nx).
+        Edited on 07/29: instead of counting all the slices in, we only take the slices adjacent to the focal plane.
+        
         '''
+        
+        
         
         # z spacing:
         dz = float(dz)
@@ -499,6 +509,8 @@ class Simulation(Pupil):
             pass
 #             pyfftw.interfaces.cache.enable()
 
+        mu_purpose = _np.abs(_np.random.randn(nz, self.ny, self.nx))
+        PSF += mu_purpose # To remove the zero pixels
         Ue = _np.ones_like(PSF).astype(_np.complex128)
         U = _np.ones_like(PSF).astype(_np.complex128)
         Uconj = _np.ones_like(PSF).astype(_np.complex128)
@@ -508,7 +520,7 @@ class Simulation(Pupil):
 #         expr2 = "Ic = mu + (U * Uconj)"
 
         for ii in range(nIterations):
-            
+            # Withing the iteration, A should be masked 
             print( 'Iteration',ii+1)        
             # Calculate PSF field from given PF:
             U = self.pf2psf(A, zs, intensity=False) 
@@ -516,7 +528,7 @@ class Simulation(Pupil):
             Uconj = _np.conj(U)
             #weave.blitz(expr2)
             Ic = mu + (U * Uconj) # should I have sqrt here instead of 
-
+            
             minFunc = _np.mean(PSF*_np.log(PSF/Ic))
             print( 'Relative entropy per pixel:', minFunc)
             redChiSq = _np.mean((PSF-Ic)**2)
@@ -545,7 +557,7 @@ class Simulation(Pupil):
             #mean(abs(A))*_np.exp(1j*_np.angle(A))
             
             # NA restriction:
-            A[k>k_max] = 0
+            A[k>k_max] = 0 # set everything outside k_max as 0 
             if resetAmp:
                 amp = ndimage.gaussian_filter(_np.abs(A),15)
                 A = amp*_np.nan_to_num(A/_np.abs(A))
@@ -557,6 +569,7 @@ class Simulation(Pupil):
                 #counts = sum(abs(A))/self.pupil_npxl
                 #A = counts*_np.exp(1j*angle(A))
                 #A[k>k_max] = 0
+            
 
         return A
 
