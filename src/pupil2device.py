@@ -521,7 +521,7 @@ class Simulation(Pupil):
             pass
 #             pyfftw.interfaces.cache.enable()
 
-        mu_purpose = _np.random.randint(2,3, size = (nz, self.ny, self.nx))
+        mu_purpose = _np.random.randint(1,2, size = (nz, self.ny, self.nx))
         PSF += mu_purpose # To remove the zero pixel
         Ue = _np.ones_like(PSF).astype(_np.complex128)
         U = _np.ones_like(PSF).astype(_np.complex128)
