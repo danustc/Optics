@@ -27,13 +27,14 @@ def read_tiff_singles(dph, tflags, spl = 1, srt = 'name'):
         im0 = tif.asarray()
         ny, nx = im0.shape
         # from here, assume that all the figures with the same tflags share 
-    istack = np.zeros([int(n_tif/spl), ny, nx])
+    nz = int(n_tif/spl)
+    istack = np.zeros([nz, ny, nx])
     istack[0] = np.copy(im0)
     
     
-    for ia in np.arange(spl, n_tif, step = spl):
-        ii = int(ia/spl)
-        fname = tif_list[ii]
+    for ii in np.arange(1, nz):
+        ia = ii*spl
+        fname = tif_list[ia]
         with TiffFile(fname) as tif:
             im0 = tif.asarray()
             istack[ii] = np.copy(im0)

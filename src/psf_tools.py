@@ -44,17 +44,16 @@ def psf_recenter(stack, r_mask = 40, cy_ext = 1.5):
     cy_ext: how far the background should extend to the outside 
     '''
     nz, ny, nx = stack.shape 
-    cz, cx, cy = np.unravel_index(np.argmax(gf(stack*r_mask,2)), (nz,ny,nx))
+    cz, cy, cx = np.unravel_index(np.argmax(gf(stack*r_mask,2)), (nz,ny,nx))
     print( "Center found at: ", cz,cx,cy)
             # We laterally center the stack at the brightest pixel
-    cut = stack[:,cx-r_mask:cx+r_mask,cy-r_mask:cy+r_mask]
-    PSF = np.zeros((nz,nx,ny))
-    PSF[:,nx/2-r_mask:nx/2+r_mask,ny/2-r_mask:ny/2+r_mask] = cut
+   
+   
+    ny_shift = int(ny/2 - cy)
+    nx_shift = int(nx/2 - cx)
+    PSF = np.roll(stack, ny_shift, axis = 1)
+    PSF = np.roll(PSF, nx_shift, axis = 2)
     
-    c_cyl = cylinder_cutter([nz, ny, nx], [cy, cx], r_mask)
-    b_cyl = cylinder_cutter([nz, ny, nx], [cy, cx], r_mask, r_mask*cy_ext)
-    background = np.mean(stack[b_cyl])
     
-    PSF[np.logical_not(c_cyl)] = background
     return PSF
             # Background estimation

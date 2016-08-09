@@ -332,7 +332,6 @@ class Simulation(Pupil):
 
     def __init__(self, nx=256, dx=0.1, l=0.68, n=1.33, NA=1.27, f=3333.33, wavelengths=10, wavelength_halfmax=0.005):
 
-        print("The pupil size:", nx)
         dx = float(dx)
         self.dx = dx
         l = float(l)
@@ -348,6 +347,9 @@ class Simulation(Pupil):
 
         # Frequency sampling:
         dk = 1/(nx*dx) # What should dx be? 
+        k_pxl = int(self.k_max/dk)
+        print("The pixel radius of pupil:", k_pxl)
+        
         # Pupil function pixel grid:
         Mx,My = _np.mgrid[-nx/2.:nx/2.,-nx/2.:nx/2.]+0.5
         self.x_pxl = Mx # pixel grid in x  
@@ -359,13 +361,25 @@ class Simulation(Pupil):
         ky = dk*My
         self.k = _msqrt(kx**2+ky**2) # This is in the unit of 1/x # this is a 2-D array 
         
+#         self.k = _msqrt(kx**2+ky**2)# This is in the unit of 1/x # this is a 2-D array 
+        out_pupil = self.k>self.k_max
+        
         # Axial Fourier space coordinate:
         self.kz = _msqrt((n/l)**2-self.k**2)
+        self.kz[out_pupil] = 0
+#         self.kz.imag = 0 # brutal force
+
+        
+        
+        
+        print(self.kz.dtype)
         self.kzs = _np.zeros((self.numWavelengths,self.kz.shape[0],self.kz.shape[1]),dtype=self.kz.dtype)
         ls = _np.linspace(l-wavelength_halfmax,l+wavelength_halfmax,self.numWavelengths)
         for i in range(0,self.kzs.shape[0]):
             self.kzs[i] = _msqrt((n/ls[i])**2-self.k**2)
-        
+            self.kzs[i,out_pupil] = 0
+#             self.kzs.imag = 0 # brutal force
+             
         # Scaled pupil function radial coordinate:
         self.r = self.k/self.k_max # Should be dimension-less
         self.s = self.unit_disk_to_spatial_radial_coordinate(self.r) # The real radius of the pupil. 
@@ -375,6 +389,9 @@ class Simulation(Pupil):
         # Plane wave:
         self.plane = _np.ones((nx,nx))+1j*_np.zeros((nx,nx))
         self.plane[self.k>self.k_max] = 0 # Outside the pupil: set to zero
+    
+        
+        
         self.pupil_npxl = abs(self.plane.sum()) # how many non-zero pixels
 
         self.kx = kx # This is not used
@@ -402,13 +419,14 @@ class Simulation(Pupil):
             The complex PSF. If the memory is to small, a memmap will be
             returned instead of an array.
         """
-
+        
         nx = self.nx
         
         if _np.isscalar(zs):
             zs = [zs]
         nz = len(zs)
         kz = self.kz
+        
 
     # The normalization for ifft2:
         N = _np.sqrt(nx*self.ny)
@@ -432,12 +450,11 @@ class Simulation(Pupil):
 
         for i in range(nz):
             if verbose: print('Calculating PSF slice for z={0}um.'.format(zs[i]))
-#             if use_pyfftw:
-#                 pass
-#                 aligned = pyfftw.n_byte_align(_np.exp(2*_np.pi*1j*kz*zs[i])*PF,16)
-#                 U = N * pyfftw.interfaces.numpy_fft.ifft2(aligned)
-#             else:
+#            
             U = N*_fftpack.ifft2(_np.exp(2*_np.pi*1j*kz*zs[i])*PF)
+            
+            
+            
             for j in range(0,self.kzs.shape[0]):
 #                 if use_pyfftw:
 #                     pass
@@ -450,7 +467,7 @@ class Simulation(Pupil):
             if intensity:
                 _slice_ = _np.abs(_slice_)**2
             PSF[i] = _slice_
-
+            
         if nz == 1:
             PSF = PSF[0]
         
@@ -459,7 +476,7 @@ class Simulation(Pupil):
 
 
 
-    def psf2pf(self, PSF, dz, mu, A, nIterations=10, z_offset=0, use_pyfftw=True, resetAmp=True,
+    def psf2pf(self, PSF, zs, mu, A, nIterations=5, use_pyfftw=True, resetAmp=True,
                symmeterize=False):
 
         '''
@@ -485,10 +502,7 @@ class Simulation(Pupil):
         
         '''
         
-        
-        
         # z spacing:
-        dz = float(dz)
         # Number of z slices:
         nz = PSF.shape[0]
         # Noise level:
@@ -499,9 +513,7 @@ class Simulation(Pupil):
         k_max = self.k_max
 
         # Z position of slices:
-        upper = 0.5*(nz-1)*dz
-        zs = _np.linspace(-upper,upper,nz) - z_offset # OK.
-
+        # edit on 08/09: directly pass zs instead of dz and z_offset
     # Normalization for fft2:
         N = _np.sqrt(self.nx*self.ny)
 
@@ -509,8 +521,8 @@ class Simulation(Pupil):
             pass
 #             pyfftw.interfaces.cache.enable()
 
-        mu_purpose = _np.abs(_np.random.randn(nz, self.ny, self.nx))
-        PSF += mu_purpose # To remove the zero pixels
+        mu_purpose = _np.random.randint(2,3, size = (nz, self.ny, self.nx))
+        PSF += mu_purpose # To remove the zero pixel
         Ue = _np.ones_like(PSF).astype(_np.complex128)
         U = _np.ones_like(PSF).astype(_np.complex128)
         Uconj = _np.ones_like(PSF).astype(_np.complex128)
@@ -528,6 +540,7 @@ class Simulation(Pupil):
             Uconj = _np.conj(U)
             #weave.blitz(expr2)
             Ic = mu + (U * Uconj) # should I have sqrt here instead of 
+        
             
             minFunc = _np.mean(PSF*_np.log(PSF/Ic))
             print( 'Relative entropy per pixel:', minFunc)

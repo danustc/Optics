@@ -79,7 +79,7 @@ class DM_simulate(object):
 
 
 class PSF_PF(object):
-    def __init__(self, PSF, dx=0.097, dz=0.30, ld=0.550, nrefrac=1.33, NA=1.0, fl=9000, nIt=4):
+    def __init__(self, PSF, dx=0.097, dz=0.30, ld=0.525, nrefrac=1.33, NA=1.0, fl=9000, nIt=5):
         
         self.dx = dx
         self.dz = dz
@@ -96,37 +96,49 @@ class PSF_PF(object):
 
         
     
-    def retrievePF(self, bscale = 0.98, psf_diam = 60):
+    def retrievePF(self, bscale = 0.98, psf_diam = 50, resample = None):
         # an ultrasimplified version
+        
+        
         cx, cy = np.unravel_index(self.PSF.argmax(), self.PSF.shape)[1:]
             # Intensity trace along z
-        i = self.PSF[:,cx,cy]
+        i_signal = self.PSF[:,cx,cy]
         upper = 0.5*(self.nz-1)*self.dz
         z = np.linspace(-upper, upper, self.nz)
             # Initial fit parameters
-        b = np.mean((i[0],i[-1]))
-        a = i.max() - b
+        b = np.mean((i_signal[0],i_signal[-1]))
+        a = i_signal.max() - b
         w = self.l/3.2
         p0 = (a,0,w,b)
         def gaussian(z, a, z0, w, b):
             return a * np.exp(-(z-z0)**2/w) + b
             # Fit gaussian to axial intensity trace
-        popt = optimize.curve_fit(gaussian, z, i, p0)[0]
+        popt = optimize.curve_fit(gaussian, z, i_signal, p0)[0]
             # Where we think the emitter is axially located:
 #         z_offset = -1.0*popt[1] # the measured focus 
         z_offset = popt[1] # This should be the reason!!!! >_<
         A = self.PF.plane
+        
+        
         Mx, My = np.meshgrid(np.arange(self.nx)-self.nx/2., np.arange(self.nx)-self.nx/2.)
         r_pxl = _msqrt(Mx**2 + My**2)
         
-        bk_inner = psf_diam*1.50
-        bk_outer = psf_diam*2.00
+        bk_inner = psf_diam*1.20
+        bk_outer = psf_diam*1.50
         
         hcyl = np.array(self.nz*[np.logical_and(r_pxl>=bk_inner, r_pxl<bk_outer)])
         background = np.mean(self.PSF[hcyl])*bscale
         print( "   background = ", background)
         print( "   z_offset = ", z_offset)
-        complex_PF = self.PF.psf2pf(self.PSF, self.dz, background, A, self.nIt, z_offset)
+        
+        if(resample is None):
+            PSF_sample = self.PSF
+            zs = z-z_offset
+        else:
+            PSF_sample = self.PSF[::resample]
+            zs = z[::resample]-z_offset
+        
+        complex_PF = self.PF.psf2pf(PSF_sample, zs, background, A, self.nIt)
     
     
         Pupil_final = _PupilFunction(complex_PF, self.PF)

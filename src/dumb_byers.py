@@ -2,11 +2,14 @@ import os
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
+from Phase_retrieval import PSF_PF
+from skimage.restoration import unwrap_phase
+from DM_simulate import DM_simulate
  
- 
-def dumb_byers(path): 
- 
-    psf_list = glob.glob(path+"*.npy")
+def dumb_byers(): 
+
+    path = '/home/sillycat/Documents/Light_sheet/Data/Jul14/' 
+    psf_list = glob.glob(path+"T0*.npy")
     psf_list.sort(key = os.path.getmtime) 
     ii = 0
     session_list = []
@@ -16,11 +19,8 @@ def dumb_byers(path):
         print(psf_name)
         psf = np.load(psf_name)
         Retrieve = PSF_PF(psf)
-    
-        PF = unwrap_phase(Retrieve.retrievePF().phase)
-        Strehl[ii] = Retrieve.Strehl_ratio()
         
-        print(Strehl[ii])
+        PF = unwrap_phase(Retrieve.retrievePF().phase)
         PF_core = PF[64:192, 64:192]
         dia_PF = 47
         pattern = PF[128-dia_PF:128+dia_PF, 128-dia_PF:128+dia_PF]
@@ -83,9 +83,12 @@ def dumb_byers(path):
 
     plt.figure(figsize=(7,4))
     lp = len(psf_list)
-    plt.plot(np.arange(lp-1),Strehl[:-1], 'b-x', linewidth=2)
+    
     ax = plt.gca()
     ax.set_xticks(np.arange(1,lp-1,3))
     ax.set_xticklabels(session_list[1:lp-1:3], rotation = 20)
-    plt.savefig(path+'Strehl')
+
     plt.show()
+    
+if __name__ == '__main__':
+    dumb_byers()
