@@ -7,7 +7,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy as sp
+from scipy import optimize
 from scipy.ndimage import gaussian_filter as gf
 
 def gaussian(z, a, z0, w, b):
@@ -59,7 +59,7 @@ def psf_recenter(stack, r_mask = 40, cy_ext = 1.5):
             # Background estimation
 
 
-def psf_zplane(stack, dz):
+def psf_zplane(stack, dz, w0, de = 1):
     '''
     determine the position of the real focal plane.
     '''
@@ -68,17 +68,14 @@ def psf_zplane(stack, dz):
     
     zrange = (nz-1)*dz*0.5
     zz = np.linspace(-zrange, zrange, nz)
-    im_z = 
-    
+    center_z = stack[:,cy-de:cy+de+1,cx-de:cx+de+1]
+    im_z = center_z.mean(axis=2).mean(axis=1)
     
     b = np.mean((im_z[0],im_z[-1]))
-            a = im_z.max() - b
-            w = l/3.2
-            p0 = (a,0,w,b)
-            
-            # Fit gaussian to axial intensity trace
-            popt, pcov = optimize.curve_fit(gaussian, z, im_z, p0)
-            # Where we think the emitter is axially located:
-    z_offset = popt[1] # The original version is wrong
+    a = im_z.max() - b
     
+    p0 = (a,0,w0,b)
+    popt = optimize.curve_fit(gaussian, zz, im_z, p0)[0]
+    z_offset = popt[1] # The original version is wrong
+    return z_offset, zz
     
