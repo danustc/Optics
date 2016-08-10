@@ -100,9 +100,9 @@ class PSF_PF(object):
         # an ultrasimplified version
         
         
-        cx, cy = np.unravel_index(self.PSF.argmax(), self.PSF.shape)[1:]
+        cy, cx = np.unravel_index(self.PSF.argmax(), self.PSF.shape)[1:]
             # Intensity trace along z
-        i_signal = self.PSF[:,cx,cy]
+        i_signal = self.PSF[:,cy,cx]
         upper = 0.5*(self.nz-1)*self.dz
         z = np.linspace(-upper, upper, self.nz)
             # Initial fit parameters
