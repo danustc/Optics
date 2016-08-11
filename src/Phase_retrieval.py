@@ -1,5 +1,6 @@
 """
 Created by Dan Xie on 07/15/2016
+Last edit: 08/10/2016
 """
 
 # This should be shaped into an independent module 

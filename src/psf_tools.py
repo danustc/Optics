@@ -1,5 +1,5 @@
 '''
- Last update by Dan Xie, 08/08/2016
+ Last update by Dan Xie, 08/10/2016
  A systematic simulation of optical systems, based on POPPY package.
  This file contains all the psf tools 
 
@@ -17,6 +17,7 @@ def gaussian(z, a, z0, w, b):
 def cylinder_cutter(dims,c_offset,rad1, rad2 = None):
     """
     return a cylinder-shaped 3D array 
+    This is kinda useless, but let's still keep it here.
     """
     nz = dims[0]
     ny = dims[1]
@@ -31,13 +32,9 @@ def cylinder_cutter(dims,c_offset,rad1, rad2 = None):
         cyl = np.array(nz*[rad<rad1])
     else:
         cyl = np.array(nz*[np.logical_and(rad> rad1, rad<rad2)])
-        
-
     return cyl
 
     # done with cylinder 
-
-
 
 def psf_recenter(stack, r_mask = 40, cy_ext = 1.5):
     '''
@@ -53,7 +50,6 @@ def psf_recenter(stack, r_mask = 40, cy_ext = 1.5):
     nx_shift = int(nx/2 - cx)
     PSF = np.roll(stack, ny_shift, axis = 1)
     PSF = np.roll(PSF, nx_shift, axis = 2)
-    
     
     return PSF
             # Background estimation
@@ -78,4 +74,35 @@ def psf_zplane(stack, dz, w0, de = 1):
     popt = optimize.curve_fit(gaussian, zz, im_z, p0)[0]
     z_offset = popt[1] # The original version is wrong
     return z_offset, zz
+
+
+def psf_visualize(stack, cut_range = 2, axis = 0, z_step = 0.3, r_step=0.097, c_pxl = None):
+    """
+    cut_range: where to cut off 
+    axis:    0 --- z-direction
+            1 --- y-direction
+            2 --- x-direction
+    z_step: step in z-direction
+    r_step: step in x and y direction 
+    """
+    figv = plt.figure(figsize=(6,4))
+    ax = figv.add_subplot(1,1,1)
+    nz, ny, nx = stack.shape 
+    cz, cy, cx = np.unravel_index(np.argmax(stack), (nz,ny,nx))
+    dims = [nz, ny, nx]
+    centers = [cz, cy, cx]
+    steps = [z_step, r_step, r_step]
     
+    
+    if (c_pxl is None):
+        c_pxl = dims[axis]/2
+    else:
+        c_pxl = centers[axis]
+    
+    n_cut = int(cut_range/steps[axis])
+    
+    psf_line = stack[]
+    
+    
+    
+    return figv
