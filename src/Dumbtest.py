@@ -2,7 +2,7 @@
 # Later this will be shaped into a good simulator of optics system. 
 
 import os
-from Phase_retrieval import PSF_PF, DM_simulate
+from Phase_retrieval import PSF_PF
 from skimage.restoration import unwrap_phase
 import glob
 import numpy as np
@@ -25,26 +25,11 @@ def main():
     tifffunc.write_tiff(psf.astype('uint16'), 'psf_stack') # save a copy of recentered PSF.
     
     Retrieve = PSF_PF(psf_mid, dx=0.078, dz=0.10, ld=0.525, nrefrac=1.515, NA=1.42, fl=3000, nIt=10)
-    k_pxl = Retrieve.PF.k_pxl # the radius of pupil in pixels
     pupil_func = unwrap_phase(Retrieve.retrievePF(bscale=1.00, psf_diam= 150, resample = 5).phase)/(2*np.pi) #in 
     
-    ny,nx = pupil_func.shape
     
-    plt.figure(figsize=(5,4))
-    im = plt.imshow(pupil_func[ny-k_pxl:ny+k_pxl, nx-k_pxl:nx+k_pxl], cmap = 'RdBu')
-    plt.tick_params(
-            axis = 'both',
-            which = 'both',
-            bottom = 'off',
-            top = 'off',
-            right = 'off',
-            left = 'off',
-            labelleft='off',
-            labelbottom = 'off')
-    plt.colorbar(im)
-    plt.savefig('pupil_0809')
+    fig = Retrieve.pupil_display()
     plt.show()
-    
 #     print('Strehl ratio: ',Strehl)
     
     

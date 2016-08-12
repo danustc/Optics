@@ -1,6 +1,7 @@
 """
 Created by Dan Xie on 07/15/2016
 Last edit: 08/11/2016
+Class PSF_PF retrieves a the pupil plane from a given PSF measurement
 """
 
 # This should be shaped into an independent module 
@@ -12,74 +13,10 @@ import libtim.zern
 import matplotlib.pyplot as plt
 import pupil2device as pupil
 from numpy.lib.scimath import sqrt as _msqrt
-from scipy.ndimage import interpolation
 from skimage.restoration import unwrap_phase
 from psf_tools import psf_zplane
 
 # a small zernike function
- 
-class Zernike_func(object):
-    def __init__(self,radius, mask=False):
-        self.radius = radius
-        self.useMask = mask
-        self.pattern = []
-
-        
-    
-    def single_zern(self, mode, amp):
-        modes = np.zeros((mode))
-        modes[mode-1] = amp
-        self.pattern= libtim.zern.calc_zernike(modes, self.radius, mask = self.useMask, zern_data= {})
-        
-        return self.pattern
-    
-    
-    def multi_zern(self, amps):
-        self.pattern = libtim.zern.calc_zernike(amps, self.radius, mask = self.useMask, zern_data = {})
-        return self.pattern
-#         RMSE[ii] = np.sqrt(np.var(PF_core))
-#         ii +=1
-
-    def plot_zern(self):
-        plt.imshow(self.pattern, interpolation='none')
-        plt.show()
-    
-
-# ---------------Below is a simulation of deformable mirror
-
-class DM_simulate(object):
-    
-    def __init__(self, nseg = 12, nPixels = 256, pattern=None):
-        self.nSegments = nseg
-        self.nPixels = nPixels
-        self.DMsegs = np.zeros((self.nSegments, self.nSegments))
-        self.zern = Zernike_func(nPixels/2)
-        self.borders = np.linspace(0,self.nPixels,num=self.nSegments+1).astype(int)
-        
-        
-        if pattern is None:
-            self.pattern = np.zeros((nPixels,nPixels))
-        else: 
-            zoom = 256./np.float(pattern.shape[0])
-            MOD = interpolation.zoom(pattern,zoom,order=0,mode='nearest')
-            self.pattern = MOD
-            
-
-    def findSeg(self):
-        for ii in np.arange(self.nSegments):
-            for jj in np.arange(self.nSegments):
-                xStart = self.borders[ii]
-                xEnd = self.borders[ii+1]
-                yStart = self.borders[jj]
-                yEnd = self.borders[jj+1]
-                
-                av = np.mean(self.pattern[xStart:xEnd, yStart:yEnd])
-                self.DMsegs[ii,jj] = av
-                
-        DMsegs = np.copy(self.DMsegs)
-        return DMsegs
-        
-
 
 class PSF_PF(object):
     def __init__(self, PSF, dx=0.097, dz=0.30, ld=0.525, nrefrac=1.33, NA=1.0, fl=9000, nIt=5):
@@ -153,25 +90,48 @@ class PSF_PF(object):
     
     #-------------------------Visualization part of PSF-PF ------------------------------- 
     
-    def pupil_display(self):
+    def pupil_display(self, cross = False):
         # this function plots pupil plane phase in the unit of wavelength(divided by 2pi)
         k_pxl = self.PF.k_pxl+1 # leave some space for the edge
-        phase_block = self.pf_phase[self.ny/2-k_pxl:self.ny/2+k_pxl, self.nx/2-k_pxl:self.nx/2+k_pxl]/(2.*np.pi)
-        fig = plt.figure(figsize=(6.5,6))
-        im = plt.imshow(phase_block, cmap = 'RdBu', extent=(-3,3,3,-3))
-        plt.colorbar(im)  
-        plt.tick_params(
-            axis = 'both',
-            which = 'both', 
-            bottom = 'off',
-            top = 'off',
-            right = 'off',
-            left = 'off',
-            labelleft='off',
-            labelbottom = 'off')
+        
+        if (cross == False): # display the plane
+            phase_block = self.pf_phase[self.ny/2-k_pxl:self.ny/2+k_pxl, self.nx/2-k_pxl:self.nx/2+k_pxl]/(2.*np.pi)
+            fig = plt.figure(figsize=(6.5,5.6))
+            im = plt.imshow(phase_block, cmap = 'RdBu', extent=(-3,3,3,-3))
+            plt.colorbar(im)  
+            plt.tick_params(
+                axis = 'both',
+                which = 'both', 
+                bottom = 'off',
+                top = 'off',
+                right = 'off',
+                left = 'off',
+                labelleft='off',
+                labelbottom = 'off')
+        else: # display the cross sections
+            fig = plt.figure(figsize = 6.5, 4.0)
+            ax = fig.add_subplot(1,1,1)
+            pf_crx = self.pf_phase[self.ny/2, self.nx/2-k_pxl:self.nx/2+k_pxl]/(2.*np.pi)
+            pf_cry = self.pf_phase[self.ny/2-k_pxl:self.ny/2+k_pxl, self.nx/2]/(2.*np.pi)
+            
+            # define the plot range
+            lim_up = np.max(np.max(pf_crx), np.max(pf_cry)) 
+            lim_down = np.min(np.min(pf_crx), np.min(pf_cry))
+            
+            k_coord = float(np.arange(-k_pxl, k_pxl)+0.5)/(k_pxl-1)
+            ax.plot(k_coord, pf_crx, '-r', linewidth = 2)
+            ax.plot(k_coord, pf_cry, '-g', linewidth = 2)
+            ax.set_xlabel('k')
+            ax.set_ylim([lim_down,lim_up])
+            ax.set_xticks([-1.0, 0, 1.0])
+            
     
         return fig
+        # done with pupil_display
     
+
+
+
 
 class _PupilFunction(object):
     '''

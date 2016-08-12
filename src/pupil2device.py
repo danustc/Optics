@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # based on Ryan's inControl package with some minor modification.
 # This should be wrapped into a cleaner class.
-# Edited by Dan on 08/11/16
+# Contains a couple of redundant functions which are device-based. Should be removed.
+# Last update: 08/11/16 by Dan
 
 
 import numpy as _np
@@ -12,6 +13,9 @@ import tempfile as _tempfile
 
 
 class Pupil(object):
+    """
+    This contains the pupil definition of the pupil function, which I don't find very useful.
+    """
 
     def __init__(self, l, n, NA, f, d=170):
 

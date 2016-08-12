@@ -1,8 +1,7 @@
 '''
  Last update by Dan Xie, 08/11/2016
- A systematic simulation of optical systems, based on POPPY package.
- This file contains all the psf tools 
-
+ This file contains all the psf tools: reading, 
+ 
 '''
 
 import matplotlib.pyplot as plt
@@ -76,7 +75,7 @@ def psf_zplane(stack, dz, w0, de = 1):
     return z_offset, zz
 
 
-def psf_visualize(stack, cut_range = 2, axis = 0, z_step = 0.3, r_step=0.097, c_pxl = None):
+def psf_lineplot(stack, cut_range = 2, axis = 0, z_step = 0.3, r_step=0.097, c_pxl = None):
     """
     cut_range: where to cut off 
     axis:    0 --- z-direction
@@ -117,3 +116,29 @@ def psf_visualize(stack, cut_range = 2, axis = 0, z_step = 0.3, r_step=0.097, c_
     ax.set_xlabel('distance (micron)')
     
     return figv
+    # done with psf_lineplot
+    
+
+def psf_planeplot(stack, plane = 0, px_radius = 50, c_pxl = None, argmt = None):
+    """
+    select one or more planes to display
+    argmt: arrangement of multiple plots 
+    """
+    side_0 = 6.0
+    nz, ny, nx = stack.shape
+    cz, cy, cx = np.unravel_index(np.argmax(stack), (nz,ny,nx))
+    centers = [cz, cy, cx]
+    
+    if c_pxl is None: 
+        # plot where the maximum is 
+        c_pxl = centers[plane]
+    
+    if(np.isscalar(c_pxl) == True):
+        # If we only plot one frame
+        figp = plt.figure(figsize = (side_0,side_0))
+    else:
+        # plot multiple frames in one figure
+        figp = plt.figure(figsize = (side_0, side_0*argmt[1]/argmt[0]))
+
+    return figp
+    # end of psf_planeplot
