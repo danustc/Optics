@@ -1,5 +1,5 @@
 '''
- Last update by Dan Xie, 08/10/2016
+ Last update by Dan Xie, 08/11/2016
  A systematic simulation of optical systems, based on POPPY package.
  This file contains all the psf tools 
 
@@ -89,20 +89,31 @@ def psf_visualize(stack, cut_range = 2, axis = 0, z_step = 0.3, r_step=0.097, c_
     ax = figv.add_subplot(1,1,1)
     nz, ny, nx = stack.shape 
     cz, cy, cx = np.unravel_index(np.argmax(stack), (nz,ny,nx))
-    dims = [nz, ny, nx]
     centers = [cz, cy, cx]
     steps = [z_step, r_step, r_step]
     
-    
     if (c_pxl is None):
-        c_pxl = dims[axis]/2
-    else:
+        # if c_pxl is not given, then plot across the maximum 
         c_pxl = centers[axis]
-    
+        
     n_cut = int(cut_range/steps[axis])
-    
-    psf_line = stack[]
-    
-    
+    if(axis == 0):
+        # plot along z-direction
+        psf_line = stack[c_pxl-n_cut:c_pxl+n_cut, cy, cx]
+        coord = np.arange(-n_cut, n_cut)*z_step
+        cl = 'b'
+    elif(axis == 1):
+        # plot along y-direction
+        psf_line = stack[cz, c_pxl-n_cut:c_pxl+n_cut, cx]
+        coord = np.arange(-n_cut, n_cut)*r_step
+        cl = 'g'
+    else:
+        # plot along x-direction
+        psf_line = stack[cz, cy, c_pxl-n_cut:c_pxl+n_cut]
+        coord = np.arange(-n_cut, n_cut)*r_step
+        cl = 'r'
+        
+    ax.plot(coord, psf_line, color = cl, linewidth = 2)
+    ax.set_xlabel('distance (micron)')
     
     return figv

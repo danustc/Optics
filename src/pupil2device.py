@@ -1,6 +1,7 @@
 #!/usr/bin/python
+# based on Ryan's inControl package with some minor modification.
 # This should be wrapped into a cleaner class.
-# Edited by Dan on 07/15
+# Edited by Dan on 08/11/16
 
 
 import numpy as _np
@@ -8,10 +9,6 @@ from scipy import fftpack as _fftpack
 from scipy import ndimage
 from numpy.lib.scimath import sqrt as _msqrt
 import tempfile as _tempfile
-import matplotlib.pyplot as plt
-
-
-# mu_purpose = 0.01
 
 
 class Pupil(object):
@@ -347,15 +344,15 @@ class Simulation(Pupil):
 
         # Frequency sampling:
         dk = 1/(nx*dx) # What should dx be? 
-        k_pxl = int(self.k_max/dk)
-        print("The pixel radius of pupil:", k_pxl)
+        self.k_pxl = int(self.k_max/dk)
+        print("The pixel radius of pupil:", self.k_pxl)
         
         # Pupil function pixel grid:
         Mx,My = _np.mgrid[-nx/2.:nx/2.,-nx/2.:nx/2.]+0.5
         self.x_pxl = Mx # pixel grid in x  
         self.y_pxl = My # pixel grid in y
         self.r_pxl = _msqrt(Mx**2+My**2) # why the x,y,r_pxl are dimensionless?
-
+        
         # Pupil function frequency space: 
         kx = dk*Mx 
         ky = dk*My

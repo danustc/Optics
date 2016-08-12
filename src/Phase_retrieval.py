@@ -1,6 +1,6 @@
 """
 Created by Dan Xie on 07/15/2016
-Last edit: 08/10/2016
+Last edit: 08/11/2016
 """
 
 # This should be shaped into an independent module 
@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import pupil2device as pupil
 from numpy.lib.scimath import sqrt as _msqrt
 from scipy.ndimage import interpolation
+from skimage.restoration import unwrap_phase
 from psf_tools import psf_zplane
 
 # a small zernike function
@@ -22,6 +23,7 @@ class Zernike_func(object):
         self.radius = radius
         self.useMask = mask
         self.pattern = []
+
         
     
     def single_zern(self, mode, amp):
@@ -103,7 +105,6 @@ class PSF_PF(object):
         z_offset, zz = psf_zplane(self.PSF, self.dz, self.l/3.2) # This should be the reason!!!! >_<
         A = self.PF.plane
         
-        
         Mx, My = np.meshgrid(np.arange(self.nx)-self.nx/2., np.arange(self.nx)-self.nx/2.)
         r_pxl = _msqrt(Mx**2 + My**2)
         
@@ -124,11 +125,10 @@ class PSF_PF(object):
         
         complex_PF = self.PF.psf2pf(PSF_sample, zs, background, A, self.nIt)
     
-    
+          
         Pupil_final = _PupilFunction(complex_PF, self.PF)
-        
         self.pf_complex = Pupil_final.complex
-        self.pf_phase = Pupil_final.phase
+        self.pf_phase = unwrap_phase(Pupil_final.phase)
         self.pf_ampli = Pupil_final.amplitude
         return Pupil_final
         
@@ -140,6 +140,37 @@ class PSF_PF(object):
         
         strehl = c_up/c_down
         return strehl
+    
+    
+    def zernike_fitting(self, z_max = 22, head_remove = True):
+        """
+        Fit self.pf_phase to zernike modes 
+        z_max: maximum order of Zernike modes that should be fitted 
+        head_remove: remove the first 1 --- 4 order modes, by default true.
+        To be fitted later. 
+        """ 
+    
+    
+    #-------------------------Visualization part of PSF-PF ------------------------------- 
+    
+    def pupil_display(self):
+        # this function plots pupil plane phase in the unit of wavelength(divided by 2pi)
+        k_pxl = self.PF.k_pxl+1 # leave some space for the edge
+        phase_block = self.pf_phase[self.ny/2-k_pxl:self.ny/2+k_pxl, self.nx/2-k_pxl:self.nx/2+k_pxl]/(2.*np.pi)
+        fig = plt.figure(figsize=(6.5,6))
+        im = plt.imshow(phase_block, cmap = 'RdBu', extent=(-3,3,3,-3))
+        plt.colorbar(im)  
+        plt.tick_params(
+            axis = 'both',
+            which = 'both', 
+            bottom = 'off',
+            top = 'off',
+            right = 'off',
+            left = 'off',
+            labelleft='off',
+            labelbottom = 'off')
+    
+        return fig
     
 
 class _PupilFunction(object):
