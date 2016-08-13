@@ -29,7 +29,7 @@ def main():
     
     
     fig = Retrieve.pupil_display()
-    plt.show()
+    plt.savefig('0809_pupil_wrong')
 #     print('Strehl ratio: ',Strehl)
     
     

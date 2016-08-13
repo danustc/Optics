@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import interpolation
 
 class Zernike_func(object):
-    def __init__(self,radius, mask=False):
+    def __init__(self,radius, mask=True):
         self.radius = radius
         self.useMask = mask
         self.pattern = []

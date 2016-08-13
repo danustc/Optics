@@ -10,6 +10,8 @@ from scipy import optimize
 from scipy.ndimage import gaussian_filter as gf
 
 def gaussian(z, a, z0, w, b):
+    # w = 2 \sigma ^2 
+    # FWHM: 2.355 \sigma
     return a * np.exp(-(z-z0)**2/w) + b
 
 
@@ -75,6 +77,8 @@ def psf_slice(stack, dim_slice = 0, n_slice = None):
     # end of psf_slice
 
 
+
+
 def psf_zplane(stack, dz, w0, de = 1):
     '''
     determine the position of the real focal plane.
@@ -97,7 +101,7 @@ def psf_zplane(stack, dz, w0, de = 1):
     return z_offset, zz
 
 
-def psf_lineplot(stack, cut_range = 2, axis = 0, z_step = 0.3, r_step=0.097, c_pxl = None):
+def psf_lineplot(stack, cut_range = 2, z_step = 0.3, r_step=0.097):
     """
     cut_range: where to cut off 
     axis:    0 --- z-direction
@@ -105,39 +109,57 @@ def psf_lineplot(stack, cut_range = 2, axis = 0, z_step = 0.3, r_step=0.097, c_p
             2 --- x-direction
     z_step: step in z-direction
     r_step: step in x and y direction 
+    plot all the three directions
+    and fit to Gaussian to give the FWHM
     """
     figv = plt.figure(figsize=(6,4))
     ax = figv.add_subplot(1,1,1)
     nz, ny, nx = stack.shape 
     cz, cy, cx = np.unravel_index(np.argmax(stack), (nz,ny,nx))
-    centers = [cz, cy, cx]
-    steps = [z_step, r_step, r_step]
     
-    if (c_pxl is None):
-        # if c_pxl is not given, then plot across the maximum 
-        c_pxl = centers[axis]
-        
-    n_cut = int(cut_range/steps[axis])
-    if(axis == 0):
-        # plot along z-direction
-        psf_line = stack[c_pxl-n_cut:c_pxl+n_cut, cy, cx]
-        coord = np.arange(-n_cut, n_cut)*z_step
-        cl = 'b'
-    elif(axis == 1):
-        # plot along y-direction
-        psf_line = stack[cz, c_pxl-n_cut:c_pxl+n_cut, cx]
-        coord = np.arange(-n_cut, n_cut)*r_step
-        cl = 'g'
-    else:
-        # plot along x-direction
-        psf_line = stack[cz, cy, c_pxl-n_cut:c_pxl+n_cut]
-        coord = np.arange(-n_cut, n_cut)*r_step
-        cl = 'r'
-        
-    ax.plot(coord, psf_line, color = cl, linewidth = 2)
+    FWHM = np.zeros(3)
+    # plot along z-direction
+    psf_z = stack[:, cy, cx]
+    coord_z = (np.arange(nz)-nz*0.5)*z_step
+    ax.plot(coord_z, psf_z, '-ob', linewidth = 2)
+    
+    b = np.mean((psf_z[0],psf_z[-1]))
+    a = psf_z.max() - b
+    w0 = 3.00
+    pz_0 = (a,0,w0,b)
+    popt = optimize.curve_fit(gaussian, coord_z, psf_z, pz_0)[0]
+    FWHM[0] = np.sqrt(popt[2]*0.5)* 2.355
+    
+    # plot along y-direction
+    psf_y = stack[cz,:, cx]
+    coord_y = (np.arange(ny)-ny*0.5)*r_step
+    ax.plot(coord_y, psf_y, '->g', linewidth = 2)
+    
+    b = np.mean((psf_y[0],psf_y[-1]))
+    a = psf_y.max() - b
+    w0 = 0.50
+    py_0 = (a,0,w0,b)
+    popt = optimize.curve_fit(gaussian, coord_y, psf_y, py_0)[0]
+    FWHM[1] = np.sqrt(popt[2]*0.5)* 2.355
+    
+    # plot along x-direction
+    psf_x = stack[cz, cy, :]
+    coord_x = (np.arange(nx)-nx*0.5)*r_step
+    ax.plot(coord_x, psf_x, '-xr', linewidth = 2)
+    
+    b = np.mean((psf_x[0],psf_x[-1]))
+    a = psf_x.max() - b
+    w0 = 0.50
+    px_0 = (a,0,w0,b)
+    popt = optimize.curve_fit(gaussian, coord_x, psf_x, px_0)[0]
+    FWHM[2] = np.sqrt(popt[2]*0.5)* 2.355
+    
     ax.set_xlabel('distance (micron)')
+    ax.set_xlim([-cut_range,cut_range])
     
-    return figv
+    
+    plt.tight_layout()
+    return figv, FWHM
     # done with psf_lineplot
     
 
@@ -163,7 +185,7 @@ def psf_planeplot(stack, plane = 0, c_pxl = None, argmt = None):
         py, px = pslice.shape
         figp = plt.figure(figsize = (side_0,side_0*py/px))
         ax = figp.add_subplot(1,1,1)
-        ax.imshow(pslice, cmap = 'Grey_r', interpolation = 'none')
+        ax.imshow(pslice, cmap = 'Greys_r', interpolation = 'none')
         ax.tick_params(
             axis = 'both',
             which = 'both',
@@ -185,7 +207,7 @@ def psf_planeplot(stack, plane = 0, c_pxl = None, argmt = None):
             # plot one by one 
             pslice = psf_slice(stack, plane, n_slice)
             ax = figp.add_subplot(argmt[0], argmt[1], ii)
-            ax.imshow(pslice, cmap = 'Grey_r', interpolation = 'none')
+            ax.imshow(pslice, cmap = 'Greys_r', interpolation = 'none')
             ax.tick_params(
                 axis = 'both',
                 which = 'both',

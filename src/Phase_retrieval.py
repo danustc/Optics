@@ -19,7 +19,7 @@ from psf_tools import psf_zplane
 # a small zernike function
 
 class PSF_PF(object):
-    def __init__(self, PSF, dx=0.097, dz=0.30, ld=0.525, nrefrac=1.33, NA=1.0, fl=9000, nIt=5):
+    def __init__(self, PSF, dx=0.097, dz=0.30, ld=0.525, nrefrac=1.33, NA=1.0, fl=9000, nIt=10):
         
         self.dx = dx
         self.dz = dz
@@ -36,17 +36,21 @@ class PSF_PF(object):
 
         
     
-    def retrievePF(self, bscale = 0.98, psf_diam = 50, resample = None):
+    def retrievePF(self, bscale = 1.00, psf_diam = 50, resample = None):
         # an ultrasimplified version
+        # comment on 08/12: I am still not convinced of the way of setting background. 
+        
         
         z_offset, zz = psf_zplane(self.PSF, self.dz, self.l/3.2) # This should be the reason!!!! >_<
         A = self.PF.plane
         
+#         z_offset = -z_offset # To deliberately add something wrong
+        
         Mx, My = np.meshgrid(np.arange(self.nx)-self.nx/2., np.arange(self.nx)-self.nx/2.)
         r_pxl = _msqrt(Mx**2 + My**2)
         
-        bk_inner = psf_diam*1.20
-        bk_outer = psf_diam*1.50
+        bk_inner = 50
+        bk_outer = 61
         
         hcyl = np.array(self.nz*[np.logical_and(r_pxl>=bk_inner, r_pxl<bk_outer)])
         background = np.mean(self.PSF[hcyl])*bscale
@@ -96,7 +100,7 @@ class PSF_PF(object):
         
         if (cross == False): # display the plane
             phase_block = self.pf_phase[self.ny/2-k_pxl:self.ny/2+k_pxl, self.nx/2-k_pxl:self.nx/2+k_pxl]/(2.*np.pi)
-            fig = plt.figure(figsize=(6.5,5.6))
+            fig = plt.figure(figsize=(5.5,4.5))
             im = plt.imshow(phase_block, cmap = 'RdBu', extent=(-3,3,3,-3))
             plt.colorbar(im)  
             plt.tick_params(
@@ -109,23 +113,24 @@ class PSF_PF(object):
                 labelleft='off',
                 labelbottom = 'off')
         else: # display the cross sections
-            fig = plt.figure(figsize = 6.5, 4.0)
+            fig = plt.figure(figsize = (6.5, 4.0))
             ax = fig.add_subplot(1,1,1)
             pf_crx = self.pf_phase[self.ny/2, self.nx/2-k_pxl:self.nx/2+k_pxl]/(2.*np.pi)
             pf_cry = self.pf_phase[self.ny/2-k_pxl:self.ny/2+k_pxl, self.nx/2]/(2.*np.pi)
             
             # define the plot range
-            lim_up = np.max(np.max(pf_crx), np.max(pf_cry)) 
-            lim_down = np.min(np.min(pf_crx), np.min(pf_cry))
+#             lim_up = np.max(np.max(pf_crx), np.max(pf_cry)) 
+#             lim_down = np.min(np.min(pf_crx), np.min(pf_cry))
             
-            k_coord = float(np.arange(-k_pxl, k_pxl)+0.5)/(k_pxl-1)
-            ax.plot(k_coord, pf_crx, '-r', linewidth = 2)
-            ax.plot(k_coord, pf_cry, '-g', linewidth = 2)
+            k_coord = (np.arange(-k_pxl, k_pxl).astype('float64')+0.5)/(k_pxl-1.)
+            ax.plot(k_coord, pf_crx, '-r', linewidth = 2, label = 'X')
+            ax.plot(k_coord, pf_cry, '-g', linewidth = 2, label = 'Y')
             ax.set_xlabel('k')
-            ax.set_ylim([lim_down,lim_up])
+            ax.set_ylim([-0.5,0.5])
+            ax.set_xlim([-1.1,1.1])
             ax.set_xticks([-1.0, 0, 1.0])
             
-    
+        plt.tight_layout()
         return fig
         # done with pupil_display
     

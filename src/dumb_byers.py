@@ -5,90 +5,82 @@ import matplotlib.pyplot as plt
 from Phase_retrieval import PSF_PF
 from skimage.restoration import unwrap_phase
 from DM_simulate import DM_simulate
+from psf_tools import *
  
 def dumb_byers(): 
 
-    path = '/home/sillycat/Documents/Light_sheet/Data/Jul14/' 
-    psf_list = glob.glob(path+"T0*.npy")
+    path = '/home/sillycat/Documents/Light_sheet/Data/Aug09/' 
+    psf_list = glob.glob(path+"T0_mod*.npy")
     psf_list.sort(key = os.path.getmtime) 
     ii = 0
     session_list = []
-    for psf_name in psf_list:
-        session_name = os.path.split(psf_name)[-1][:-4]+'pupil'
-        session_list.append(session_name)
-        print(psf_name)
-        psf = np.load(psf_name)
-        Retrieve = PSF_PF(psf)
-        
-        PF = unwrap_phase(Retrieve.retrievePF().phase)
-        PF_core = PF[64:192, 64:192]
-        dia_PF = 47
-        pattern = PF[128-dia_PF:128+dia_PF, 128-dia_PF:128+dia_PF]
-        plt.figure(figsize=(5,4))
-        im = plt.imshow(pattern, cmap = 'RdBu')
-        plt.tick_params(
-                        axis = 'both',
-                        which = 'both',
-                        bottom = 'off',
-                        top = 'off',
-                        right = 'off',
-                        left = 'off',
-                        labelleft='off',
-                        labelbottom = 'off')
-        plt.colorbar(im)
-        plt.savefig(path+session_name)
-        plt.clf()
-        
-        
-        DM = DM_simulate(12, 256, pattern)
-        segs = DM.findSeg()
-        im = plt.imshow(segs, cmap = 'RdBu', interpolation='none')
-        plt.tick_params(
-                        axis = 'both',
-                        which = 'both',
-                        bottom = 'off',
-                        top = 'off',
-                        right = 'off',
-                        left = 'off',
-                        labelleft='off',
-                        labelbottom = 'off')
-        plt.colorbar(im)
-        plt.savefig(path+session_name + '_seg')
-        
-        
-        
-        
-        plt.clf()
-        
-        plt.figure(figsize = (5,3.5))
-        
-        sk = (np.arange(128)-64)/47.
-        ax=plt.gca()
-        plt.plot(sk,PF_core[:,64], '-b', linewidth = 2)
-        plt.plot(sk,PF_core[64,:], '-g', linewidth = 2)
-        plt.xlabel('k')
-        ax.set_ylim([-1.3,1.5])
-        ax.set_yticks([-0.5, 0, 0.5, 1.0])
-        
-        plt.savefig(path+session_name + '_cs')
-        plt.clf()
-        plt.close()
-        
-        
-        
-        
-        
-#         RMSE[ii] = np.sqrt(np.var(PF_core))
-        ii +=1
-
-    plt.figure(figsize=(7,4))
-    lp = len(psf_list)
     
-    ax = plt.gca()
-    ax.set_xticks(np.arange(1,lp-1,3))
-    ax.set_xticklabels(session_list[1:lp-1:3], rotation = 20)
+    DS = DM_simulate()
+    seg1 = DS.zernSeg(6)
+    plt.imshow(DS.pattern)
+    plt.tick_params(
+        axis = 'both',
+        which = 'both', 
+        bottom = 'off',
+        top = 'off',
+        right = 'off',
+        left = 'off',
+        labelleft='off',
+        labelbottom = 'off')
+    plt.tight_layout()
+    
+    plt.savefig('zern6')
 
-    plt.show()
+    
+    seg4 = DS.zernSeg(11)
+    plt.imshow(DS.pattern)
+    plt.tick_params(
+        axis = 'both',
+        which = 'both', 
+        bottom = 'off',
+        top = 'off',
+        right = 'off',
+        left = 'off',
+        labelleft='off',
+        labelbottom = 'off')
+    plt.tight_layout()
+    
+    plt.savefig('zern11')
+
+    
+    
+    
+    
+    
+    for fname in psf_list:
+        session_name = os.path.split(fname)[-1][:-4]
+        psf_name = session_name + 'psf'
+        pupil_name = session_name + 'pupil'
+        session_list.append(session_name)
+        psf_stack = np.load(fname)
+        
+        Retrieve = PSF_PF(psf_stack)
+        
+        fig, FHWM = psf_lineplot(psf_stack, cut_range = 2)
+        print(session_name)
+        print(FHWM)
+        
+        pupil = Retrieve.retrievePF()
+        fig_amp = plt.figure(figsize = (4.5,4))
+        ax = fig_amp.add_subplot(111) 
+        ax.imshow(Retrieve.pf_ampli[128-50:128+50, 128-50:128+50])
+        fig_amp.savefig(pupil_name+'amp')   
+#         fig_p = Retrieve.pupil_display(cross = False)
+#         fig_v = Retrieve.pupil_display(cross = True)
+        
+#         fig_p.savefig(pupil_name+'_pl')
+#         fig_v.savefig(pupil_name+'_cr')
+          
+        plt.close('all')
+        
+        
+    
+        
     
 if __name__ == '__main__':
     dumb_byers()
