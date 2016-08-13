@@ -6,7 +6,7 @@ All visualization tools
 import numpy as np
 import matplotlib.pyplot as plt 
 
-def plot_2d(arr_2d, x_side = 5., ax_label = False, xy_range = None, flip_y = False):
+def plot_2d(arr_2d, x_side = 5., ax_label = False, xy_range = None):
     """
     plot an 2d array with automatically figured aspect ratio
     ax_label: if False ,turn off all axes labels.
@@ -24,9 +24,9 @@ def plot_2d(arr_2d, x_side = 5., ax_label = False, xy_range = None, flip_y = Fal
         sc_x = x_side
         sc_y = x_side* ny*rg_y/(nx*rg_x)
         
-    
     fig, ax = plt.figure(figsize= (sc_x, sc_y))
-    ax.imshow(arr_2d, extent = xy_range)
+    ax.imshow(arr_2d, cmap = 'Reds_r', interpolation = 'none', extent = xy_range)
+    
     if (ax_label == False): # turn off all the axis tools
         ax.tick_params(
             axis = 'both',
@@ -37,8 +37,17 @@ def plot_2d(arr_2d, x_side = 5., ax_label = False, xy_range = None, flip_y = Fal
             left = 'off',
             labelleft='off',
             labelbottom = 'off')
-    
-    
      
     return fig
+    # done with plot_2d
     
+
+def plot_1d(xx, yy, x_side = 5., ax_label = True):
+    """
+    Generic plotting function of 1d array.
+     
+    """
+    
+    x_side 
+    
+    fig, ax = plt.figure(figsize = (sc_x, sc_y))
