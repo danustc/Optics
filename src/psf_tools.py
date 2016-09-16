@@ -1,6 +1,6 @@
 '''
- Last update by Dan Xie, 08/11/2016
- This file contains all the psf tools: reading, 
+ Last update by Dan Xie, 09/10/2016
+ This file contains all the psf tools: reading, plotting 
  
 '''
 
@@ -56,22 +56,26 @@ def psf_recenter(stack, r_mask = 40, cy_ext = 1.5):
             # Background estimation
 
 
-def psf_slice(stack, dim_slice = 0, n_slice = None):
+def psf_slice(stack, dim_slice = 0, n_slice = None, trunc = 50):
     """
     take out a slice from a stack and return it. 
     """
+    
+    hy, hx = stack.shape[1:]
+    hy/=2 
+    hx/=2
     if n_slice is None:
         n_slice = stack.shape[dim_slice]/2 # take from the middle
     
     if (dim_slice == 0):
         # take an xy slice on
-        pslice = stack[n_slice]
+        pslice = stack[n_slice,hy-trunc:hy+trunc, hx-trunc:hx+trunc]
     elif(dim_slice == 1):
         # take an xz slice
-        pslice = stack[:, n_slice, :]
+        pslice = stack[:, n_slice, hx-trunc:hx+trunc]
     else: 
         # take an yz slice 
-        pslice = stack[:,:,n_slice]
+        pslice = stack[:,hy-trunc:hy+trunc,n_slice]
     
     return pslice
     # end of psf_slice
