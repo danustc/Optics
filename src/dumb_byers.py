@@ -9,7 +9,7 @@ from Phase_retrieval import PSF_PF
  
 def dumb_byers(): 
 
-    path = '/home/sillycat/Documents/Light_sheet/Data/Sep08/' 
+    path = '/home/sillycat/Documents/Light_sheet/Data/Sep07/' 
     psf_list = glob.glob(path+"*mod*.npy")
     pupil_list = glob.glob(path+'Pupil/*phase.npy')
     psf_list.sort(key = os.path.getmtime) 
@@ -32,7 +32,13 @@ def dumb_byers():
         ii+=1
         
         
-    plt.plot(Strehl)
+    fig = plt.figure(figsize = (8,5))
+    ax = fig.add_subplot(1,1,1)
+    ax.plot(Strehl, '-x', linewidth = 2)
+    ax.set_xlabel('Iterations', fontsize = 14)
+    ax.set_ylabel('Strehl ratio', fontsize = 14)
+    fig.savefig(path+ 'Strehl')
+    
     plt.show()
 #         psf_yz = psf_slice(psf_stack, dim_slice=1, trunc = 40)
 #         fig = plt.figure()

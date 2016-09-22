@@ -33,7 +33,9 @@ class PSF_PF(object):
         
         print(self.nz, self.ny, self.nx)
         self.PF=pupil.Simulation(self.nx,dx,ld,nrefrac,NA,fl,wavelengths=1) # initialize the pupil function
-
+        in_pupil = self.PF.k < self.PF.k_max
+        
+        self.NK = in_pupil.sum()
         
     
     def retrievePF(self, bscale = 1.00, psf_diam = 50, resample = None):
@@ -77,7 +79,7 @@ class PSF_PF(object):
     def Strehl_ratio(self):
         # this is very raw. Should save the indices for pixels inside the pupil. 
         c_up = (self.pf_ampli.sum())**2
-        c_down = (self.pf_ampli**2).sum()*self.
+        c_down = (self.pf_ampli**2).sum()*self.NK
         
         strehl = c_up/c_down
         return strehl
