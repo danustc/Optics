@@ -1,12 +1,11 @@
 """
 Created by Dan Xie on 07/15/2016
-Last edit: 08/11/2016
+Last edit: 09/19/2016 
 Class PSF_PF retrieves a the pupil plane from a given PSF measurement
 """
 
 # This should be shaped into an independent module 
 # Phase retrieval 
-
 
 import numpy as np
 import libtim.zern
@@ -15,11 +14,47 @@ import pupil2device as pupil
 from numpy.lib.scimath import sqrt as _msqrt
 from skimage.restoration import unwrap_phase
 from psf_tools import psf_zplane
-
+from microscope import objective
 # a small zernike function
 
+
+class phase_retrieval(objective):
+    """
+    retrieve phase from arbitrary image pattern
+    """
+
+    def __init__(self, NA, fl, rind, dr):
+        """
+        phase retrieval 
+        """
+        self.NA = NA 
+        self.fl = fl
+        self.n_refrac = rind
+        self.dr = dr
+        objective.__init__(self, NA, rind, fl)
+        
+        
+        
+        
+    def retrievePF(self, pattern, nIt = 10):
+        """
+        Retrieve phase from arbitrary pattern.
+        1. load the pattern, recognize dimensions 
+        2. Have an initial guess, usually plane wave 
+        3.
+        """
+        
+        ny, nx = pattern.shape
+        PF = pupil.Simulation(ny, nx, self.dr, self.wl, self.n_refrac, self.NA, self.fl, wavelengths= 1)# initialize a pupil simulation class 
+        PF.psf2pf(pattern, zs, mu, A, nIterations, use_pyfftw, resetAmp, symmeterize)
+        
+        
+
+
+
+
 class PSF_PF(object):
-    def __init__(self, PSF, dx=0.097, dz=0.30, ld=0.525, nrefrac=1.33, NA=1.0, fl=9000, nIt=10):
+    def __init__(self, pattern, dx=0.097, dz=0.30, ld=0.525, nrefrac=1.33, NA=1.0, fl=9000, nIt=10):
         
         self.dx = dx
         self.dz = dz
@@ -28,7 +63,7 @@ class PSF_PF(object):
         self.NA = NA
         self.f = fl
         self.nIt = nIt
-        self.PSF = PSF
+        self.pattern = pattern
         self.nz, self.ny, self.nx = self.PSF.shape
         
         print(self.nz, self.ny, self.nx)
@@ -57,7 +92,7 @@ class PSF_PF(object):
         print( "   background = ", background)
         print( "   z_offset = ", z_offset)
         
-        if(resample == False):
+        if(resample is None):
             PSF_sample = self.PSF
             zs = zz-z_offset
         else:
@@ -66,18 +101,11 @@ class PSF_PF(object):
         
         complex_PF = self.PF.psf2pf(PSF_sample, zs, background, A, self.nIt)
     
-          
-        Pupil_final = _PupilFunction(complex_PF, self.PF)
-        self.pf_complex = Pupil_final.complex
-        self.pf_phase = unwrap_phase(Pupil_final.phase)
-        self.pf_ampli = Pupil_final.amplitude
-        return Pupil_final
-        
     
     def Strehl_ratio(self):
         # this is very raw. Should save the indices for pixels inside the pupil. 
         c_up = (self.pf_ampli.sum())**2
-        c_down = (self.pf_ampli**2).sum()*self.
+        c_down = (self.pf_ampli**2).sum()*(len(np.where(self.pf_ampli!=0)[0]))
         
         strehl = c_up/c_down
         return strehl
@@ -136,55 +164,3 @@ class PSF_PF(object):
     
 
 
-
-
-class _PupilFunction(object):
-    '''
-    A pupil function that keeps track when when either complex or amplitude/phase
-    representation is changed.
-    '''
-    def __init__(self, cmplx, geometry):
-        self.complex = cmplx
-        self._geometry = geometry
-
-    @property
-    def complex(self):
-        return self._complex
-
-    @complex.setter
-    def complex(self, new):
-        self._complex = new
-        self._amplitude = abs(new)
-        self._phase = np.angle(new)
-
-    @property
-    def amplitude(self):
-        return self._amplitude
-
-    @amplitude.setter
-    def amplitude(self, new):
-        self._amplitude = new
-        self._complex = new * np.exp(1j*self._phase)
-
-    @property
-    def phase(self):
-        return self._phase
-
-    @phase.setter
-    def phase(self, new):
-        self._phase = new
-        self._complex = self._amplitude * np.exp(1j*new)
-
-    @property
-    def zernike_coefficients(self):
-        return self._zernike_coefficients
-
-    @zernike_coefficients.setter
-    def zernike_coefficients(self, new):
-        self._zernike_coefficients = new
-        #self._zernike = zernike.basic_set(new, self._geometry.r, self._geometry.theta)
-        self._zernike = libtim.zern.calc_zernike(new, self._geometry.nx/2.0)
-
-    @property
-    def zernike(self):
-        return self._zernike
