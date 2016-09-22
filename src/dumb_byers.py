@@ -9,8 +9,9 @@ from Phase_retrieval import PSF_PF
  
 def dumb_byers(): 
 
-    path = '/home/sillycat/Documents/Light_sheet/Data/Sep07/' 
-    psf_list = glob.glob(path+"*mod*.npy")
+#     path = '/home/sillycat/Documents/Light_sheet/Data/Sep07/' 
+    path = 'D:\Data\Dan\Sep22\\'
+    psf_list = glob.glob(path+"T33_mod*.npy")
     pupil_list = glob.glob(path+'Pupil/*phase.npy')
     psf_list.sort(key = os.path.getmtime) 
     pupil_list.sort(key = os.path.getmtime)
@@ -27,7 +28,7 @@ def dumb_byers():
         psf_stack = np.load(fname)
         
         PR = PSF_PF(psf_stack, dx=0.097, dz=0.30, ld=0.525, nrefrac=1.33, NA=1.0, fl=9000, nIt=10)
-        PR.retrievePF(bscale = 1.00, psf_diam = 50, resample = False)
+        PR.retrievePF(bscale = 1.00, psf_diam = 60, resample = False)
         Strehl[ii] = PR.Strehl_ratio()
         ii+=1
         

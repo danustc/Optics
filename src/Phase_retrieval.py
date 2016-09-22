@@ -78,7 +78,7 @@ class PSF_PF(object):
     
     def Strehl_ratio(self):
         # this is very raw. Should save the indices for pixels inside the pupil. 
-        c_up = (self.pf_ampli.sum())**2
+        c_up = np.abs(self.pf_complex.sum())**2
         c_down = (self.pf_ampli**2).sum()*self.NK
         
         strehl = c_up/c_down

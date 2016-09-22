@@ -10,7 +10,7 @@ from scipy import fftpack as _fftpack
 from scipy import ndimage
 from numpy.lib.scimath import sqrt as _msqrt
 import tempfile as _tempfile
-
+import pyfftw
 
 class Pupil(object):
     """
@@ -519,11 +519,10 @@ class Simulation(Pupil):
         N = _np.sqrt(self.nx*self.ny)
 
         if use_pyfftw:
-            pass
-#             pyfftw.interfaces.cache.enable()
+            pyfftw.interfaces.cache.enable()
 
-        mu_purpose = _np.random.randint(1,2, size = (nz, self.ny, self.nx))
-        PSF += mu_purpose # To remove the zero pixel
+#         mu_purpose = _np.random.randint(1,2, size = (nz, self.ny, self.nx))
+#         PSF += mu_purpose # To remove the zero pixel
         Ue = _np.ones_like(PSF).astype(_np.complex128)
         U = _np.ones_like(PSF).astype(_np.complex128)
         Uconj = _np.ones_like(PSF).astype(_np.complex128)
@@ -555,14 +554,13 @@ class Simulation(Pupil):
             A = _np.zeros_like(Ue) + 1j*_np.zeros_like(Ue) # temporarily set A as a 3-D array 
             for i in range(len(zs)):
                 #Ue[i] = _fftpack.fftshift(Ue[i])
-#                 if use_pyfftw:
-#                     pass
-#                     Ue_aligned = pyfftw.n_byte_align(_fftpack.fftshift(Ue[i]),16)
-#                     fted_ue = pyfftw.interfaces.numpy_fft.fft2(Ue_aligned)
-#                     A[i] = fted_ue/_np.exp(2*_np.pi*1j*kz*zs[i])/N
-                
-                fted_ue = _fftpack.fft2(_fftpack.fftshift(Ue[i])) # Transform in x-y plane
-                A[i] = fted_ue/_np.exp(2*_np.pi*1j*kz*zs[i])/N # multiply by the phase (exp(-2pi i kz *z ))
+                if use_pyfftw:
+                    Ue_aligned = pyfftw.n_byte_align(_fftpack.fftshift(Ue[i]),16)
+                    fted_ue = pyfftw.interfaces.numpy_fft.fft2(Ue_aligned)
+                    A[i] = fted_ue/_np.exp(2*_np.pi*1j*kz*zs[i])/N
+                else:
+                    fted_ue = _fftpack.fft2(_fftpack.fftshift(Ue[i])) # Transform in x-y plane
+                    A[i] = fted_ue/_np.exp(2*_np.pi*1j*kz*zs[i])/N # multiply by the phase (exp(-2pi i kz *z ))
                 for j in range(0,self.kzs.shape[0]): # what does this mean? # A correction for multi-wavelength
                     A[i] = A[i] + fted_ue/_np.exp(2*_np.pi*1j*self.kzs[j]*zs[i])/N
                 A[i] = A[i]/(1+self.kzs.shape[0])
