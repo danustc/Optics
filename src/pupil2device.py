@@ -10,7 +10,7 @@ from scipy import fftpack as _fftpack
 from scipy import ndimage
 from numpy.lib.scimath import sqrt as _msqrt
 import tempfile as _tempfile
-import pyfftw
+# import pyfftw
 
 class Pupil(object):
     """
@@ -399,7 +399,7 @@ class Simulation(Pupil):
         self.theta = _np.arctan2(My,Mx) # Polar coordinate: angle
 
 
-    def pf2psf(self, PF, zs, intensity=True, verbose=False, use_pyfftw=True):
+    def pf2psf(self, PF, zs, intensity=True, verbose=False, use_pyfftw=False):
         
         """
         Computes the point spread function for a given pupil function.
@@ -477,7 +477,7 @@ class Simulation(Pupil):
 
 
 
-    def psf2pf(self, PSF, zs, mu, A, nIterations=5, use_pyfftw=True, resetAmp=True,
+    def psf2pf(self, PSF, zs, mu, A, nIterations=5, use_pyfftw=False, resetAmp=True,
                symmeterize=False):
 
         '''
@@ -518,8 +518,8 @@ class Simulation(Pupil):
     # Normalization for fft2:
         N = _np.sqrt(self.nx*self.ny)
 
-        if use_pyfftw:
-            pyfftw.interfaces.cache.enable()
+#         if use_pyfftw:
+#             pyfftw.interfaces.cache.enable()
 
 #         mu_purpose = _np.random.randint(1,2, size = (nz, self.ny, self.nx))
 #         PSF += mu_purpose # To remove the zero pixel
