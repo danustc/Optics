@@ -19,3 +19,13 @@ def plane_line_intersect(n_plane, r_plane, k_line, r_line):
     b = np.array([kz*lx - kx*lz, kz*ly - ky*lz, np.dot(r_plane, n_plane)])
     r_inter = np.linalg.solve(M, b)
     return r_inter
+
+
+
+def cone_to_plane(theta, a_max):
+    '''
+    convert the cone to plane
+    '''
+    h = 1./np.tan(a_max)
+    sl = h*np.tan(theta)
+    return sl
