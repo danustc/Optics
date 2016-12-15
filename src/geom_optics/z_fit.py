@@ -7,5 +7,5 @@ import libtim.zern as zern
 
 
 
-def 
-fitResults = libtim.zern.fit_zernike(unwrapped, rad=radius, nmodes=2    5)
+def zfit(unwrapped)
+    fitResults = zern.fit_zernike(unwrapped, rad=radius, nmodes=25)

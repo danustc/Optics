@@ -15,8 +15,17 @@ def plane_line_intersect(n_plane, r_plane, k_line, r_line):
     nx, ny, nz = n_plane
     kx, ky, kz = k_line
     lx, ly, lz = r_line
-    M = np.array([[kz, 0., -kx], [0., kz, -ky], [nx, ny, nz]]) # determine the coefficient matrix
-    b = np.array([kz*lx - kx*lz, kz*ly - ky*lz, np.dot(r_plane, n_plane)])
+    '''
+    Let me add some steps to prevent singular solution.
+    '''
+    row_1 = np.array([ky+kz, kz-kx, -(kx+ky)])
+    row_2 = np.array([ky-kz, -(kz+kx), kx+ky])
+    b_1 = np.dot(row_1, r_line)
+    b_2 = np.dot(row_2, r_line)
+
+    M = np.array([row_1, row_2, [nx, ny, nz]]) # determine the coefficient matrix
+
+    b = np.array([b_1, b_2, np.dot(r_plane, n_plane)])
     r_inter = np.linalg.solve(M, b)
     return r_inter
 

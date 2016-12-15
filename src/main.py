@@ -16,11 +16,6 @@ def main():
     N_radius = 64
     a_max  = np.arcsin(1./n1) # maximum incidental angle, unit: radian
     a_comp = np.arcsin(0.8/n1)
-
-
-
-
-    print("a_max:", a_max*180/np.pi)
     h = N_radius/np.tan(a_max)
     r_comp = h*np.tan(a_comp)
     rx = r_comp*np.cos(2*np.pi*np.arange(101)/100.)
@@ -49,50 +44,6 @@ def main():
     RP_mat = []
     OPD_mat = []
 
-    n_ind = [n1,n2]
-    for ip in np.arange(NN):
-        '''
-        Iterate through NN vectors
-        '''
-        nv = n_vec[:,ip]
-        reflect_s = np.zeros(NK)
-        reflect_p = np.zeros(NK)
-        opd_array = np.zeros(NK)
-        for ik in np.arange(NK):
-            '''
-            iterate through the NN vectors of N_vec and NK vectors of K vec
-            '''
-            kv = k_vec[:,ik]
-            if(np.allclose(np.linalg.norm(kv),1.)):
-                rv, Rs, Rp = Objective_aberration.refraction_plane(kv, nv, n1, n2)
-                reflect_s[ik] = Rs
-                reflect_p[ik] = Rp
-                opl_diff = Objective_aberration.aberration_coverslide(kv, rv, nv, d, n_ind)[0]
-                opd_array[ik] = opl_diff
-            else:
-                print("Error!")
-
-        opd_array = opd_array/lam
-        rsm = reflect_s.reshape(ny, nx)
-        rpm = reflect_p.reshape(ny, nx)
-        rsm[np.logical_not(mask)] = 1.
-        rpm[np.logical_not(mask)] = 1.
-        RS_mat.append(rsm)
-        RP_mat.append(rpm)
-        raw_opd = opd_array.reshape(ny, nx)
-        raw_opd[np.logical_not(mask)]=0
-        z_coeffs = zern.fit_zernike(raw_opd, rad = N_radius+0.5, nmodes = 25, zern_data={})[0]
-        print(z_coeffs)
-        z_deduct = z_coeffs[0:4]
-        deduct_opd = zern.calc_zernike(z_deduct, rad = N_radius+0.5, mask = True)
-        OPD_mat.append(raw_opd-deduct_opd)
-
-
-    RSM  = np.array(RS_mat)
-    RPM  = np.array(RP_mat)
-    OPD = np.array(OPD_mat)
-
-    T_aver = 1-(RSM+RPM) + 0.5*(RSM**2+RPM**2)
 
     results = dict()
     results['rsm'] = RSM
