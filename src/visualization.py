@@ -1,53 +1,29 @@
-"""
-Created by Dan on 08/12/16
-All visualization tools 
-"""
+'''
+updated by Dan on 12/15
+'''
 
-import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+import seaborn
 
-def plot_2d(arr_2d, x_side = 5., ax_label = False, xy_range = None):
-    """
-    plot an 2d array with automatically figured aspect ratio
-    ax_label: if False ,turn off all axes labels.
-    xy_range:[xleft, xright, yup, ydown] --- This is quite different from matlab!!!
-    """
-    ny, nx = arr_2d.shape
-    
-    if xy_range is None:
-        sc_x = x_side
-        sc_y = x_side*ny/nx
-    else:
-        rg_x = xy_range[1]-xy_range[0]
-        rg_y = np.abs(xy_range[3] - xy_range[2])
-        
-        sc_x = x_side
-        sc_y = x_side* ny*rg_y/(nx*rg_x)
-        
-    fig, ax = plt.figure(figsize= (sc_x, sc_y))
-    ax.imshow(arr_2d, cmap = 'Reds_r', interpolation = 'none', extent = xy_range)
-    
-    if (ax_label == False): # turn off all the axis tools
-        ax.tick_params(
-            axis = 'both',
-            which = 'both', 
-            bottom = 'off',
-            top = 'off',
-            right = 'off',
-            left = 'off',
-            labelleft='off',
-            labelbottom = 'off')
-     
-    return fig
-    # done with plot_2d
-    
+def IMshow_pupil(pupil, axnum = True):
+    '''
+    display a pupil function in 2D
+    '''
+    NY, NX = pupil.shape
+    ry = int(NY/2.)
+    rx = int(NX/2.)
+    yy = (np.arange(NY)-ry)/ry
+    xx = (np.arange(NX)-rx)/rx
+    [MX, MY] = np.meshgrid(xx,yy)
+    fig = plt.figure(figsize=(7.5,5.8))
+    ax = fig.add_subplot(111)
+    ax.set_ylim([-N_radius, N_radius])
+    ax.set_xlim([-N_radius, N_radius])
+    if (axnum == False):
+        ax.get_yaxis.set_visible(False)
+        ax.get_xaxis.set_visible(False)
+    fig.axes.get_yaxis().set_visible(False)
+    pcm = ax.pcolor(MX, MY, pupil, cmap = 'RdYlBu_r')
+    fig.colorbar(pcm, ax = ax, extend='max')
 
-def plot_1d(xx, yy, x_side = 5., ax_label = True):
-    """
-    Generic plotting function of 1d array.
-     
-    """
-    
-    x_side 
-    
-    fig, ax = plt.figure(figsize = (sc_x, sc_y))
+    return fig  # return the figure handle
