@@ -5,8 +5,7 @@ Default unit: micron.
 
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy as sp
-from geometry_elements import plane_line_intersect, cone_to_plane
+from geom_optics.geometry_elements import plane_line_intersect, cone_to_plane
 import libtim.zern as zern
 
 '''
@@ -87,8 +86,15 @@ def aberration_coverslide_ray(ki_vec, kr_vec, n_vec, d, n_ind):
         # print(kr_vec, z_inter)
     i_inter = z_inter * ki_vec/ki_vec[2] # the original ki-should end_up
     sin_s = np.sqrt(ki_vec[0]**2 + ki_vec[1]**2)/np.linalg.norm(ki_vec)
-    sl = np.linalg.norm(r_inter-i_inter)*sin_s
 
+    '''
+    Updated by Dan on 01/05/2017: to correct the error in the calculation.
+    '''
+    diff_lateral = (r_inter-i_inter)[:2]
+    k_lateral = ki_vec[:2]  # the lateral component of the inci
+
+    # sl = np.linalg.norm(r_inter-i_inter)*sin_s
+    sl = -np.dot(diff_lateral, k_lateral)*sin_s
 
 
     opl_inc = np.linalg.norm(i_inter)*n1
