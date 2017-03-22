@@ -7,16 +7,15 @@ from psf_tools import *
 from Phase_retrieval import PSF_PF
 
 
-def dumb_byers():
+def dumb_byers(date_folder, file_flag):
 
-    path = '/home/sillycat/Documents/Light_sheet/Data/Oct13/'
-#     path = 'D:\Data\Dan\Sep22\\'
-    psf_list = glob.glob(path+"CL*_mod*.npy")
-    pupil_list = glob.glob(path+'pupils/*phase.npy')
+    path_root = '/home/sillycat/Documents/Light_sheet/Data/'
+    path = path_root + date_folder + '/'
+    psf_list = glob.glob(path+file_flag+"*.npy")
+    pupil_list = glob.glob(path+'pupil/*'+file_flag+'*phase.npy')
+    zfit_list = glob.glob(path+'pupil/*'+file_flag+'*zfit.npy')
     psf_list.sort(key = os.path.getmtime)
     pupil_list.sort(key = os.path.getmtime)
-    # zfit_list = glob.glob(path+'Pupil/*zfit.npy')
-
     Strehl = np.zeros(len(psf_list))
     ii = 0
     FWHM = np.zeros([len(psf_list), 3])
@@ -31,9 +30,9 @@ def dumb_byers():
         figv, FWHM[ii] = psf_lineplot(psf_stack)
         figv.savefig(path+session_name+'_line')
 
-        # PR = PSF_PF(psf_stack, dx=0.0975, dz=0.30, ld=0.525, nrefrac=1.33, NA=1.0, fl=9000, nIt=15)
-        # PR.retrievePF(bscale = 1.00, psf_diam = 60, resample = False)
-        # Strehl[ii] = PR.Strehl_ratio()
+        # pr = psf_pf(psf_stack, dx=0.0975, dz=0.30, ld=0.525, nrefrac=1.33, na=1.0, fl=9000, nit=15)
+        # pr.retrievepf(bscale = 1.00, psf_diam = 60, resample = false)
+        # strehl[ii] = pr.strehl_ratio()
         psf_yz = psf_slice(psf_stack, dim_slice=2, trunc = 40)
         range_z = 0.3*len(psf_yz)
         range_r = psf_yz.shape[1]*0.097
@@ -47,18 +46,6 @@ def dumb_byers():
         ii+=1
 #
 
-    fig = plt.figure(figsize = (8,5))
-    ax = fig.add_subplot(1,1,1)
-    ax.plot(Strehl, '-x', linewidth = 2)
-    ax.set_xlabel('Iterations', fontsize = 14)
-    ax.set_ylabel('Strehl ratio', fontsize = 14)
-    fig.savefig(path+ 'Strehl')
-# #
-# # #     plt.show()
-    np.save(path+'FWHM', FWHM)
-#
-# #         fig_v.savefpig(pupil_name+'_cr')
-#
     pr = 50
     fig = plt.figure(figsize = (8,4.5))
 
@@ -88,33 +75,65 @@ def dumb_byers():
 
     plt.close('all')
 #
-#     for zname in zfit_list:
-#         zfit = np.load(zname)
-#         ny, nx = zfit.shape
-#
-#         ry = ny/2
-#         rx = nx/2
-#
-#         my = np.arange(-ry, ry)+0.5
-#         mx = np.arange(-rx, rx)+0.5
-#
-#         [MY,MX] = np.meshgrid(my, mx)
-#
-#         mask = (MY**2 + MX**2)> ry**2
-#         zfit[mask] = 0
-#
-#         fig = plt.figure()
-#         ax = fig.add_subplot(111)
-#         ax.imshow(zfit, cmap = 'RdBu_r')
-#         plt.axis('off')
-#         plt.tight_layout()
-#         plt.savefig(zname[:-4])
-#         plt.clf()
-#
-#         plt.close()
+    fig = plt.figure(figsize = (8,4.5))
+    for zname in zfit_list:
+        zfit = np.load(zname)*0.515/(2*np.pi)
+        ny, nx = zfit.shape
+
+        ry = ny/2
+        rx = nx/2
+
+        my = np.arange(-ry, ry)+0.5
+        mx = np.arange(-rx, rx)+0.5
+
+        [MY,MX] = np.meshgrid(my, mx)
+
+        mask = (MY**2 + MX**2)> ry**2
+        zfit[mask] = 0
+
+
+        ax1 = fig.add_subplot(1,2,1)
+        ax1.imshow(zfit, cmap = 'RdBu_r')
+        plt.axis('off')
+        ax2 = fig.add_subplot(1,2,2)
+        ax2.plot(mx/rx,zfit[ry,:], linewidth = 2, label = 'ky')
+        ax2.plot(my/ry,zfit[:, rx], '-g', linewidth = 2, label = 'kx')
+        ax2.set_xlabel('k')
+        ax2.set_ylabel('microns')
+        ax2.legend(['ky', 'kx'])
+        plt.tight_layout()
+        fig.savefig(zname[:-4])
+        plt.cla()
+
+#        fig = plt.figure()
+#        ax = fig.add_subplot(111)
+#        ax.imshow(zfit, cmap = 'RdBu_r')
+#        plt.axis('off')
+#        plt.tight_layout()
+#        plt.savefig(zname[:-4])
+#        plt.clf()
+
+#        plt.close()
 
 
 
 
 if __name__ == '__main__':
-    dumb_byers()
+    date_folder = 'Mar09_2017'
+    file_flag = 'T0'
+
+    dumb_byers(date_folder, file_flag)
+    sharpness = glob.glob('/home/sillycat/Documents/Light_sheet/Data/'+date_folder+'/zmet_*round*.npy')
+    print(sharpness)
+    fig = plt.figure(figsize=(6,3.5))
+    ax = fig.add_subplot(1,1,1)
+    for sharpfile in sharpness:
+        tr_sharp=np.load(sharpfile)
+        ax.plot(np.arange(13),tr_sharp[:,0], '-xr', linewidth = 2,label = 'z6')
+        ax.plot(np.arange(13),tr_sharp[:,1], '-og', linewidth = 2, label = 'z11')
+        ax.plot(np.arange(13),tr_sharp[:,2], '->b', linewidth = 2, label = 'z22')
+        ax.legend(['z6', 'z11', 'z22'])
+        ax.set_xlabel('iterations', fontsize = 14)
+        ax.set_ylabel('sharpness', fontsize = 14)
+        fig.savefig(sharpfile[:-4])
+        plt.cla()

@@ -101,4 +101,8 @@ The following codes are just for testing the function
 """
 
 def main():
-    ZF = Zernike_func(radius = 47)
+    DS = DM_simulate()
+    raw_seg = np.loadtxt('../for07_mirrorSegs.txt')
+
+    DS.readSeg(raw_seg)
+    
