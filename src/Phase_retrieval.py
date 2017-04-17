@@ -20,71 +20,59 @@ from psf_tools import psf_zplane
 
 class PSF_PF(object):
     def __init__(self, PSF, dx=0.097, dz=0.30, ld=0.525, nrefrac=1.33, NA=1.0, fl=9000, nIt=10):
-        
         self.dx = dx
         self.dz = dz
-        self.l =ld   
+        self.l =ld  #wavelength 
         self.n = nrefrac
         self.NA = NA
         self.f = fl
         self.nIt = nIt
         self.PSF = PSF
         self.nz, self.ny, self.nx = self.PSF.shape
-        
         print(self.nz, self.ny, self.nx)
         self.PF=pupil.Simulation(self.nx,dx,ld,nrefrac,NA,fl,wavelengths=1) # initialize the pupil function
         in_pupil = self.PF.k < self.PF.k_max
-        
         self.NK = in_pupil.sum()
-        
-    
+
     def retrievePF(self, bscale = 1.00, psf_diam = 50, resample = None):
         # an ultrasimplified version
         # comment on 08/12: I am still not convinced of the way of setting background. 
-        
-        
+
+
+
         z_offset, zz = psf_zplane(self.PSF, self.dz, self.l/3.2) # This should be the reason!!!! >_<
         A = self.PF.plane
-        
 #         z_offset = -z_offset # To deliberately add something wrong
-        
         Mx, My = np.meshgrid(np.arange(self.nx)-self.nx/2., np.arange(self.nx)-self.nx/2.)
         r_pxl = _msqrt(Mx**2 + My**2)
-        
         bk_inner = 50
         bk_outer = 61
-        
         hcyl = np.array(self.nz*[np.logical_and(r_pxl>=bk_inner, r_pxl<bk_outer)])
         background = np.mean(self.PSF[hcyl])*bscale
         print( "   background = ", background)
         print( "   z_offset = ", z_offset)
-        
         if(resample == False):
             PSF_sample = self.PSF
             zs = zz-z_offset
         else:
             PSF_sample = self.PSF[::resample]
             zs = zz[::resample]-z_offset
-        
         complex_PF = self.PF.psf2pf(PSF_sample, zs, background, A, self.nIt)
-    
-          
         Pupil_final = _PupilFunction(complex_PF, self.PF)
         self.pf_complex = Pupil_final.complex
         self.pf_phase = unwrap_phase(Pupil_final.phase)
         self.pf_ampli = Pupil_final.amplitude
         return Pupil_final
-        
-    
+
+
     def Strehl_ratio(self):
         # this is very raw. Should save the indices for pixels inside the pupil. 
         c_up = np.abs(self.pf_complex.sum())**2
         c_down = (self.pf_ampli**2).sum()*self.NK
-        
         strehl = c_up/c_down
         return strehl
-    
-    
+
+
     def zernike_fitting(self, z_max = 22, head_remove = True):
         """
         Fit self.pf_phase to zernike modes 
