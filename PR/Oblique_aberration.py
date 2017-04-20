@@ -26,11 +26,16 @@ def load_mat(mat_path):
 
 
 
-def group_retrieval(path_root):
+def group_retrieval(path_root, fname_flag):
+    '''
+    path_root: the path to the directory containing the data files
+    fname_flag: any string that you want to append to the file name while saving figures.
+    '''
 
-    psf_list = glob.glob(path_root+"*.mat")
+    psf_list = glob.glob(path_root+"*.mat") # search all the .mat files and make the paths into a list
     psf_list.sort(key = os.path.getmtime)
     Strehl = []
+    pupil_list = {}
     FWHM = []
 
     for fname in psf_list:
@@ -43,11 +48,12 @@ def group_retrieval(path_root):
         fl_nikon = 1000*200.0/60.0
 
         FWHM.append(fhwm)
-        pr = PSF_PF(psf_stack, dx=0.0800, dz=0.20, ld=0.520, nrefrac=1.33, NA=1.27, fl=fl_nikon, nIt=11)
-        k_max = pr.PF.k_pxl
+        pr = PSF_PF(psf_stack, dx=0.0800, dz=0.20, ld=0.520, nrefrac=1.33, NA=1.27, fl=fl_nikon, nIt=11) # phase retrieval core function. 
+        k_max = pr.PF.k_pxl # the radius of pupil in the unit of pixel (k-space)
         print("k_max:", k_max)
-        pr.retrievePF(bscale = 1.00, psf_diam = 20)
-        pupil_final = pr.pf_phase
+        pr.retrievePF(bscale = 1.00, psf_diam = 20) # psf_diam should be less than half of your array size 
+        pupil_final = pr.get_phase() # grab the phase from the pr class
+        pupil_list[psf_name] = pupil_final # save the pupil inside the dictionary
         Strehl.append(pr.strehl_ratio())
         fig = plt.figure()
         ax = fig.add_subplot(1,1,1)
@@ -55,18 +61,19 @@ def group_retrieval(path_root):
         ax.set_title(psf_name)
         plt.tight_layout()
         plt.axis('off')
-        fig.savefig(path_root+psf_name+'_obj3')
+        fig.savefig(path_root+psf_name+fname_flag)
         pf_crop = pupil_final[20-k_max:20+k_max, 20-k_max:20+k_max]
         print(pf_crop.shape)
         zfit = zern.fit_zernike(pf_crop,rad = k_max,nmodes = 17)[0]/(2*np.pi)
         zfit[:4] = 0.0
         resync = zern.calc_zernike(zfit,rad = 2*k_max, mask = True)
         figr = IMshow_pupil(resync, axnum = False)
-        figr.savefig(path_root+psf_name+'_zf_resync_obj3')
+        figr.savefig(path_root+psf_name+'_zf_resync_'+ fname_flag)
         figz = zern_display(zfit, z0 = 4, ylim = [-0.005,0.02])
         print("zshape:",zfit.shape)
         figz.savefig(path_root+psf_name+'_zfit_obj3')
 
+    return Strehl, pupil_list
 
 
 
@@ -76,4 +83,5 @@ def group_retrieval(path_root):
 if __name__ == '__main__':
 
     path_root = '/home/sillycat/Documents/Light_sheet/Data/Oblique/'
-    group_retrieval(path_root)
+    Strehl, pupil_list = group_retrieval(path_root, fname_flag = 'test')
+    np.savez(path_root+'plist', **pupil_list)

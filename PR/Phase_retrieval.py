@@ -11,7 +11,7 @@ Class PSF_PF retrieves a the pupil plane from a given PSF measurement
 import numpy as np
 import libtim.zern
 import matplotlib.pyplot as plt
-import pupil2device as pupil
+import pupil
 from numpy.lib.scimath import sqrt as _msqrt
 from skimage.restoration import unwrap_phase
 from psf_tools import psf_zplane
@@ -64,6 +64,13 @@ class PSF_PF(object):
         self.pf_ampli = Pupil_final.amplitude
 
 
+    def get_phase(self):
+        '''
+        return the (unwrapped pupil phase)
+        '''
+        return self.pf_phase
+
+
     def strehl_ratio(self):
         # this is very raw. Should save the indices for pixels inside the pupil. 
         c_up = np.abs(self.pf_complex.sum())**2
@@ -72,64 +79,10 @@ class PSF_PF(object):
         return strehl
 
 
-    def zernike_fitting(self, z_max = 22, head_remove = True):
-        """
-        Fit self.pf_phase to zernike modes 
-        z_max: maximum order of Zernike modes that should be fitted 
-        head_remove: remove the first 1 --- 4 order modes, by default true.
-        To be fitted later. 
-        """ 
-    
-    
-    #-------------------------Visualization part of PSF-PF ------------------------------- 
-    
-    def pupil_display(self, cross = False):
-        # this function plots pupil plane phase in the unit of wavelength(divided by 2pi)
-        k_pxl = self.PF.k_pxl+1 # leave some space for the edge
-        
-        if (cross == False): # display the plane
-            phase_block = self.pf_phase[self.ny/2-k_pxl:self.ny/2+k_pxl, self.nx/2-k_pxl:self.nx/2+k_pxl]/(2.*np.pi)
-            fig = plt.figure(figsize=(5.5,4.5))
-            im = plt.imshow(phase_block, cmap = 'RdBu', extent=(-3,3,3,-3))
-            plt.colorbar(im)  
-            plt.tick_params(
-                axis = 'both',
-                which = 'both', 
-                bottom = 'off',
-                top = 'off',
-                right = 'off',
-                left = 'off',
-                labelleft='off',
-                labelbottom = 'off')
-        else: # display the cross sections
-            fig = plt.figure(figsize = (6.5, 4.0))
-            ax = fig.add_subplot(1,1,1)
-            pf_crx = self.pf_phase[self.ny/2, self.nx/2-k_pxl:self.nx/2+k_pxl]/(2.*np.pi)
-            pf_cry = self.pf_phase[self.ny/2-k_pxl:self.ny/2+k_pxl, self.nx/2]/(2.*np.pi)
-            
-            # define the plot range
-#             lim_up = np.max(np.max(pf_crx), np.max(pf_cry)) 
-#             lim_down = np.min(np.min(pf_crx), np.min(pf_cry))
-            
-            k_coord = (np.arange(-k_pxl, k_pxl).astype('float64')+0.5)/(k_pxl-1.)
-            ax.plot(k_coord, pf_crx, '-r', linewidth = 2, label = 'X')
-            ax.plot(k_coord, pf_cry, '-g', linewidth = 2, label = 'Y')
-            ax.set_xlabel('k')
-            ax.set_ylim([-0.5,0.5])
-            ax.set_xlim([-1.1,1.1])
-            ax.set_xticks([-1.0, 0, 1.0])
-            
-        plt.tight_layout()
-        return fig
-        # done with pupil_display
-    
-
-
-
 
 class _PupilFunction(object):
     '''
-    A pupil function that keeps track when when either complex or amplitude/phase
+    a pupil function that keeps track when when either complex or amplitude/phase
     representation is changed.
     '''
     def __init__(self, cmplx, geometry):
