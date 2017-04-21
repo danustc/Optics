@@ -82,7 +82,7 @@ class PSF_PF(object):
 
 class _PupilFunction(object):
     '''
-    a pupil function that keeps track when when either complex or amplitude/phase
+    a pupil function that keeps track when either complex or amplitude/phase
     representation is changed.
     '''
     def __init__(self, cmplx, geometry):

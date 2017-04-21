@@ -221,91 +221,6 @@ class Pupil(object):
 
 
 
-class Geometry:
-    # This is a static class for geometry description, which has nothing to do with the operation.
-    '''
-    A base class for pupil.Experiment which provides basic
-    geometrical data of a microscope experiment.
-
-    Parameters
-    ----------
-    size: tuple
-        The pixel size of a device in the pupil plane of the
-        microscope.
-    cx: float
-        The x coordinate of the pupil function center on the
-        pupil plane device in pixels.
-    cy: float
-        The y coordinate (see cx).
-    d: float
-        The diameter of the pupil function on the pupil device
-        in pixels. Ok this is correct. 
-    '''
-    
-
-    def __init__(self, size, cx, cy, d):
-        # cx, cy: the pupil center 
-        self.cx = float(cx)
-        self.cy = float(cy)
-        self.d = float(d)
-        self.size = size
-        self.nx, self.ny = size
-        self.x_pxl, self.y_pxl = _np.meshgrid(_np.arange(self.nx),_np.arange(self.ny))
-        self.x_pxl -= cx
-        self.y_pxl -= cy
-        self.r_pxl = _msqrt(self.x_pxl**2+self.y_pxl**2) # the radial coordinate in the unit of 1 (grid number )
-        self.r = 2.0*self.r_pxl/d # the radial coordinate coordinate in the unit of length. Theoretically between 0 and 1.
-        self.theta = _np.arctan2(self.y_pxl, self.x_pxl)
-        self.x = 2.0*self.x_pxl/d # so self.x and y are in the range of (0,1)
-        self.y = 2.0*self.y_pxl/d # But, isn't d the same with nx, ny?
-        
-    
-
-class Experiment(Pupil):
-    '''
-    Provides computations for a microscope experiment based on
-    Fourier optics.
-
-    Parameters
-    ----------
-
-    geometry: pupil.Geometry
-        A base object that provides basic geometric data of the
-        microscope experiment.
-    l: float
-        The light wavelength in micrometer.
-    n: float
-        The refractive index of immersion and sample media.
-    NA: float
-        The numerical aperture of the microscope objective.
-    f: float
-        The objective focal length in micrometer.
-    '''
-    
-    def __init__(self, geometry, l, n, NA, f):
-
-        l = float(l) # wavelength 
-        n = float(n) # refractive index 
-        NA = float(NA)
-        f = float(f) # obj focal length
-        self.geometry = geometry 
-        self.nx = geometry.nx
-        self.ny = geometry.ny
-        self.theta = geometry.theta
-        Pupil.__init__(self, l, n, NA, f) 
-        # So this step incorporates all the elements of Pupil into the class of Experiment 
-
-        self.s = self.unit_disk_to_spatial_radial_coordinate(geometry.r)
-        #self.s has the dimension of micron. 
-        self.alpha = self.spatial_radial_coordinate_to_optical_angle(self.s)
-        self.m = self.spatial_radial_coordinate_to_xy_slope(self.alpha)
-        self.r = geometry.r # dimensionless, between 0 and 1
-        self.size = geometry.size
-        self.pupil_npxl = sum(self.r<=1)
-        
-        # I am so confused. Why this is not used in the whole module?
-
-
 class Simulation(Pupil):
 
     '''
@@ -338,7 +253,6 @@ class Simulation(Pupil):
         f = float(f)
         self.nx = nx
         self.ny = nx
-        
         Pupil.__init__(self, l, n, NA, f)
 
         self.numWavelengths = wavelengths
@@ -347,29 +261,21 @@ class Simulation(Pupil):
         dk = 1/(nx*dx) # What should dx be? 
         self.k_pxl = int(self.k_max/dk)
         print("The pixel radius of pupil:", self.k_pxl)
-        
         # Pupil function pixel grid:
         Mx,My = _np.mgrid[-nx/2.:nx/2.,-nx/2.:nx/2.]+0.5
         self.x_pxl = Mx # pixel grid in x  
         self.y_pxl = My # pixel grid in y
         self.r_pxl = _msqrt(Mx**2+My**2) # why the x,y,r_pxl are dimensionless?
-        
         # Pupil function frequency space: 
         kx = dk*Mx 
         ky = dk*My
         self.k = _msqrt(kx**2+ky**2) # This is in the unit of 1/x # this is a 2-D array 
-        
 #         self.k = _msqrt(kx**2+ky**2)# This is in the unit of 1/x # this is a 2-D array 
         out_pupil = self.k>self.k_max
-        
         # Axial Fourier space coordinate:
         self.kz = _msqrt((n/l)**2-self.k**2)
         self.kz[out_pupil] = 0
 #         self.kz.imag = 0 # brutal force
-
-        
-        
-        
         print(self.kz.dtype)
         self.kzs = _np.zeros((self.numWavelengths,self.kz.shape[0],self.kz.shape[1]),dtype=self.kz.dtype)
         ls = _np.linspace(l-wavelength_halfmax,l+wavelength_halfmax,self.numWavelengths)
@@ -377,7 +283,6 @@ class Simulation(Pupil):
             self.kzs[i] = _msqrt((n/ls[i])**2-self.k**2)
             self.kzs[i,out_pupil] = 0
 #             self.kzs.imag = 0 # brutal force
-             
         # Scaled pupil function radial coordinate:
         self.r = self.k/self.k_max # Should be dimension-less
         self.s = self.unit_disk_to_spatial_radial_coordinate(self.r) # The real radius of the pupil. 
@@ -387,9 +292,6 @@ class Simulation(Pupil):
         # Plane wave:
         self.plane = _np.ones((nx,nx))+1j*_np.zeros((nx,nx))
         self.plane[self.k>self.k_max] = 0 # Outside the pupil: set to zero
-    
-        
-        
         self.pupil_npxl = abs(self.plane.sum()) # how many non-zero pixels
 
         self.kx = kx # This is not used
@@ -397,7 +299,6 @@ class Simulation(Pupil):
 
 
     def pf2psf(self, PF, zs, intensity=True, verbose=False, use_pyfftw=False):
-        
         """
         Computes the point spread function for a given pupil function.
 
@@ -417,14 +318,11 @@ class Simulation(Pupil):
             The complex PSF. If the memory is to small, a memmap will be
             returned instead of an array.
         """
-        
         nx = self.nx
-        
         if _np.isscalar(zs):
             zs = [zs]
         nz = len(zs)
         kz = self.kz
-        
 
     # The normalization for ifft2:
         N = _np.sqrt(nx*self.ny)
@@ -450,9 +348,6 @@ class Simulation(Pupil):
             if verbose: print('Calculating PSF slice for z={0}um.'.format(zs[i]))
 #            
             U = N*_fftpack.ifft2(_np.exp(2*_np.pi*1j*kz*zs[i])*PF)
-            
-            
-            
             for j in range(0,self.kzs.shape[0]):
 #                 if use_pyfftw:
 #                     pass
@@ -465,10 +360,8 @@ class Simulation(Pupil):
             if intensity:
                 _slice_ = _np.abs(_slice_)**2
             PSF[i] = _slice_
-            
         if nz == 1:
             PSF = PSF[0]
-        
         return PSF
 
 
