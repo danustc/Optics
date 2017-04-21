@@ -1,6 +1,13 @@
 # Optics  
 This is a small package of microscopy data processing. Can be used in combination with InControl package or for data analysis.  
-Author: [danustc](https://github.com/danustc)
+Author: [danustc](https://github.com/danustc)   
+**Required package:**
+* matplotlib
+* numpy
+* libtim
+* scipy
+* skimage
+
 * **
 ## Package Instruction by Folders
 ###  PR(Phase Retrieval)
