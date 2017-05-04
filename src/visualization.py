@@ -52,3 +52,29 @@ def zern_display(z_coeffs, z0 = 4, ylim = None):
     ax.set_ylabel('Amplitude/$\lambda$', fontsize = 14)
     fig.tight_layout()
     return fig
+
+
+
+def psf_plane(psf_frame, aov = 's', dz=0.500, dr=0.102 ):
+    '''
+    display psf on a plane
+    '''
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    if aov == 's':
+        nz, nr=psf_frame.shape
+        range_z = dz*nz
+        range_r = dr*nr
+        ax.imshow(np.log(psf_frame), cmap = 'Greys_r', extent = [-range_r*0.5, range_r*0.5, -range_z*0.5, range_z*0.5])
+
+    else:
+        ny, nx = psf_frame.shape
+        range_y = dr*ny
+        range_x = dr*nx
+        ax.imshow(np.log(psf_frame), cmap = 'Greys_r', extent = [-range_x*0.5, range_x*0.5, -range_y*0.5, range_y*0.5])
+
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+    plt.tight_layout()
+
+    return fig
