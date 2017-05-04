@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Phase_retrieval</class>
- <widget class="QMainWindow" name="Phase_retrieval">
+ <class>Form</class>
+ <widget class="QMainWindow" name="Form">
   <property name="geometry">
    <rect>
     <x>0</x>
