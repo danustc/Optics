@@ -1,6 +1,6 @@
 """
 Created by Dan Xie on 07/15/2016
-Last edit: 08/11/2016
+Last edit: 05/04/2017
 Class PSF_PF retrieves a the pupil plane from a given PSF measurement
 """
 
@@ -18,31 +18,48 @@ from psf_tools import psf_zplane
 
 # a small zernike function
 
-class PSF_PF(object):
-    def __init__(self, PSF, dx, dz, ld, nrefrac=1.33, NA=1.0, fl=9000, nIt=10):
+class Core(object):
+    def __init__(self,data_folder = None):
+        self.data_folder = data_folder
+        self.PSF = None
+        self.PF = None
+        self.dx = None
+        #self.dx = dx
+        self.l = None
+        self.n = None
+        self.NA = None
+        self.cf = None
+        print("Initialized!")
+
+    def load_psf(self,psf_path):
+        '''
+        load a psf function
+        '''
+        PSF = np.load(psf_path)
+        nz, ny, nx = PSF.shape
+        self.PSF = PSF
+        self.nx = np.min(ny,nx)
+
+
+
+    def pupil_Simulation(self, dx, ld, nrefrac, NA, obj_fl, n_wave, d_wave):
+        # simulate a pupil function using given parameters; update the list
+        self.PF=pupil.Simulation(self.nx, dx,ld,nrefrac,NA,fl,wavelengths=n_wave, wave_step = d_wave) # initialize the pupil function
         self.dx = dx
-        self.dz = dz
-        self.l =ld  #wavelength 
+        self.l = ld
         self.n = nrefrac
         self.NA = NA
-        self.f = fl
-        self.nIt = nIt
-        self.PSF = PSF
-        self.nz, self.ny, self.nx = self.PSF.shape
-        print(self.nz, self.ny, self.nx)
-        self.PF=pupil.Simulation(self.nx,dx,ld,nrefrac,NA,fl,wavelengths=1) # initialize the pupil function
-        in_pupil = self.PF.k < self.PF.k_max
-        self.NK = in_pupil.sum()
-        print("# pixels inside the pupil:", self.NK)
+        self.fl = obj_fl
+        self.n_wave = n_wave
+        self.d_wave = d_wave
 
-    def retrievePF(self, bscale = 1.00, psf_diam = 50, resample = None):
+
+
+    def retrievePF(self, dz, bscale = 1.00, psf_diam = 50 ):
         # an ultrasimplified version
-        # comment on 08/12: I am still not convinced of the way of setting background. 
 
-
-        z_offset, zz = psf_zplane(self.PSF, self.dz, self.l/3.2) # This should be the reason!!!! >_<
+        z_offset, zz = psf_zplane(self.PSF, dz, self.l/3.2) # This should be the reason!!!! >_<
         A = self.PF.plane
-#         z_offset = -z_offset # To deliberately add something wrong
         Mx, My = np.meshgrid(np.arange(self.nx)-self.nx/2., np.arange(self.nx)-self.nx/2.)
         r_pxl = _msqrt(Mx**2 + My**2)
         bk_inner = 16
@@ -51,12 +68,8 @@ class PSF_PF(object):
         background = np.mean(self.PSF[hcyl])*bscale
         print( "   background = ", background)
         print( "   z_offset = ", z_offset)
-        if(resample == False):
-            PSF_sample = self.PSF
-            zs = zz-z_offset
-        else:
-            PSF_sample = self.PSF[::resample]
-            zs = zz[::resample]-z_offset
+        PSF_sample = self.PSF
+        zs = zz-z_offset
         complex_PF = self.PF.psf2pf(PSF_sample, zs, background, A, self.nIt)
         Pupil_final = _PupilFunction(complex_PF, self.PF)
         self.pf_complex = Pupil_final.complex

@@ -38,11 +38,12 @@ def zern_display(z_coeffs, z0 = 4, ylim = None):
     z_coeffs: the coefficients
     z0: the starting mode (index 4 means 5th zernike mode)
     '''
-    zrange = z0 + np.arange(len(z_coeffs[z0:]))
+    zrange = z0 + np.arange(len(z_coeffs[z0:]))+1
     fig = plt.figure(figsize=(6.0, 3.0))
     ax = fig.add_subplot(111)
     ax.bar(zrange, z_coeffs[z0:], width = 0.8, color = 'g')
-    ax.set_xlim([z0-0.5, len(z_coeffs)+z0-0.5])
+    ax.set_xlim([z0-0.5, len(z_coeffs)+0.5])
+    ax.set_xticks(zrange[::3])
     if ylim is None:
         ax.set_ylim([-1.5, 1.5])
     else:

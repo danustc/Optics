@@ -14,7 +14,7 @@ def main():
     n1 = 1.33
     n2 = 1.50
     N_radius = 64
-    NA = 0.8
+    NA =1.0
     a_max  = np.arcsin(NA/n1) # maximum incidental angle, unit: radian
     a_comp = np.arcsin(0.8/n1)
     h = N_radius/np.tan(a_max)
@@ -30,7 +30,7 @@ def main():
     M_rot = np.arccos(MX/MR)
 
 
-    g_tilt = np.array([0.01, 15., 30.01, 40.0])*np.pi/180.
+    g_tilt = np.array([0.01, 15., 30.01, 45.0])*np.pi/180.
     M_sl = Objective_aberration.cone_to_plane(np.pi-M_inc, a_max) # the mapped lateral position
 
     k_vec = Objective_aberration.incident_vec(np.pi-M_inc, M_rot)
@@ -40,7 +40,7 @@ def main():
 
     NK = ny*nx
     NN = len(g_tilt)
-    lam = 0.550 # the wavelength
+    lam = 0.5150 # the wavelength
     RS_mat = []
     RP_mat = []
     OPD_mat = []
@@ -77,9 +77,9 @@ def main():
         RP_mat.append(rpm)
         raw_opd = opd_array.reshape(ny, nx)
         raw_opd[np.logical_not(mask)]=0
-        z_coeffs = zern.fit_zernike(raw_opd, rad = N_radius+0.5, nmodes = 25, zern_data={})[0]
-        fig_zd = zern_display(z_coeffs[4:22])
-        fig_zd.savefig('zfit_'+str(ip*15)+'_NA08.eps', format  = 'eps', dpi = 200)
+        z_coeffs = zern.fit_zernike(raw_opd, rad = N_radius+0.5, nmodes = 22, zern_data={})[0]
+        fig_zd = zern_display(z_coeffs, z0=4,ylim = [-1.8,0.8])
+        fig_zd.savefig('zfit_'+str(ip*15)+'_NA10.eps', format  = 'eps', dpi = 200)
 
 
         z_deduct = z_coeffs[0:4]
@@ -106,20 +106,20 @@ def main():
 
     fig = IMshow_pupil(OPD[0], False)
     fig.tight_layout()
-    plt.savefig('T0_10_NA08.eps', format = 'eps', dpi = 200)
+    plt.savefig('T0NA10.eps', format = 'eps', dpi = 200)
 
 
     fig = IMshow_pupil(OPD[1], False)
     fig.tight_layout()
-    plt.savefig('T15_10_NA08.eps', format = 'eps', dpi = 200)
+    plt.savefig('T15NA10.eps', format = 'eps', dpi = 200)
 
     fig = IMshow_pupil(OPD[2], False)
     fig.tight_layout()
-    plt.savefig('T30_10_NA08.eps', format = 'eps', dpi = 200)
+    plt.savefig('T30NA10.eps', format = 'eps', dpi = 200)
 
     fig = IMshow_pupil(OPD[3], False)
     fig.tight_layout()
-    plt.savefig('T40_10_NA08.eps', format = 'eps', dpi = 200)
+    plt.savefig('T40NA10.eps', format = 'eps', dpi = 200)
 
     kk = xx[:-1]/N_radius
     secx_0 = OPD[0][N_radius,:-1]
@@ -140,41 +140,40 @@ def main():
     plt.legend()
     plt.xlabel('NA')
     plt.ylabel('Aberration')
-    plt.ylim([-10,10])
-    # ax.set_label(['0', '15', '30', '45'])
+    plt.ylim([-7,7])
     # ax.plot(xx[:-1]/N_radius, secy_0, '-g')
-    plt.savefig('cross_x_10_NA08.eps', format = 'eps', dpi = 200)
+    plt.savefig('cross_xNA10.eps', format = 'eps', dpi = 200)
 
     fig = plt.figure(figsize = (7.5, 4))
     plt.plot(kk, secy_0,'-g', linewidth = 2, label = '0 degree')
     plt.plot(kk, secy_15, '-r', linewidth = 2, label = '15 degree')
     plt.plot(kk, secy_30, '-b',linewidth = 2, label = '30 degree')
     plt.plot(kk, secy_45, '--k', linewidth = 2, label = '45 degree')
-    plt.plot([-0.8, -0.8], [-10, 10], '-.m', linewidth = 2)
-    plt.plot([0.8, 0.8], [-10, 10], '-.m', linewidth = 2)
+    plt.plot([-0.8, -0.8], [-7, 7], '-.m', linewidth = 2)
+    plt.plot([0.8, 0.8], [-7, 7], '-.m', linewidth = 2)
     plt.legend()
     plt.xlabel('NA')
     plt.ylabel('Aberration')
-    plt.ylim([-10,10])
-    plt.savefig('cross_y_10_NA08.eps', format = 'eps', dpi = 200)
+    plt.ylim([-7,7])
+    plt.savefig('cross_yNA10.eps', format = 'eps', dpi = 200)
 
     #------------------------Reflectance
 
     fig = IMshow_pupil(T_aver[0], False)
     fig.tight_layout()
-    plt.savefig('Trans0_10_NA08.eps', format = 'eps', dpi = 200)
+    plt.savefig('Trans0NA10.eps', format = 'eps', dpi = 200)
 
     fig = IMshow_pupil(T_aver[1], False)
     fig.tight_layout()
-    plt.savefig('Trans15_10_NA08.eps', format = 'eps', dpi = 200)
+    plt.savefig('Trans15NA10.eps', format = 'eps', dpi = 200)
 
     fig = IMshow_pupil(T_aver[2], False)
     fig.tight_layout()
-    plt.savefig('Trans30_10_NA08.eps', format = 'eps', dpi = 200)
+    plt.savefig('Trans30NA10.eps', format = 'eps', dpi = 200)
 
     fig = IMshow_pupil(T_aver[3], False)
     fig.tight_layout()
-    plt.savefig('Trans40_10_NA08.eps', format = 'eps', dpi = 200)
+    plt.savefig('Trans45NA10.eps', format = 'eps', dpi = 200)
 
 
 
