@@ -78,3 +78,31 @@ def psf_plane(psf_frame, aov = 's', dz=0.500, dr=0.102 ):
     plt.tight_layout()
 
     return fig
+
+
+
+def pupil_showcross(pf):
+    # display the pupil function from top and cross section.
+    NY, NX = pf.shape
+    ry = int(NY/2.)
+    rx = int(NX/2.)
+    yy = (np.arange(NY)-ry)/ry
+    xx = (np.arange(NX)-rx)/rx
+    [MX, MY] = np.meshgrid(xx,yy)
+    figp = plt.figure(figsize = (8,4.5))
+    grid_size = (1,3)
+    plt.subplot2grid(grid_size,(0,0), rowspan = 1, colspan = 1)
+    plt.subplot2grid(grid_size,(0,1), rowspan = 1, colspan = 2)
+    ax1, ax2 = figp.axes
+    ax1.pcolor(MX,MY,pf,cmap = 'RdYlBu_r')
+    ax1.get_xaxis().set_visible(False)
+    ax1.get_yaxis().set_visible(False)
+
+    ax2.plot(xx,pf[ry, :], '-r', linewidth = 2, label = 'kx')
+    ax2.plot(yy,pf[:,rx], '-g', linewidth = 2, label = 'ky')
+    ax2.set_xlabel('k', fontsize = 14)
+    ax2.set_ylabel('Wavelength', fontsize = 14)
+    ax2.set_ylim([-1,1])
+
+    plt.tight_layout()
+    return figp
