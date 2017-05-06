@@ -52,8 +52,9 @@ class UI(UI_interface._UI):
 
 # ------------------------Test of the module------------
 def main():
+    pr_core = Core()
     design_path = 'PR_design'
-    PR_UI = UI(design_path)
+    PR_UI = UI(pr_core, design_path)
     
 
 if __name__ == '__main__':
