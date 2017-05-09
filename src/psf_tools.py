@@ -105,7 +105,7 @@ def psf_zplane(stack, dz, w0, de = 1):
     return z_offset, zz
 
 
-def psf_lineplot(stack, cut_range = 2, z_step = 0.3, r_step=0.097):
+def psf_lineplot(stack, cut_range = 3.5, z_step = 0.5, r_step=0.097):
     """
     cut_range: where to cut off
     axis:    0 --- z-direction

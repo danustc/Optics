@@ -15,6 +15,7 @@ def main():
     n2 = 1.50
     N_radius = 64
     NA =1.0
+    #NA = 0.8
     a_max  = np.arcsin(NA/n1) # maximum incidental angle, unit: radian
     a_comp = np.arcsin(0.8/n1)
     h = N_radius/np.tan(a_max)
@@ -104,54 +105,70 @@ def main():
     plt.close('all')
 
 
-    fig = IMshow_pupil(OPD[0], False)
+    fig = IMshow_pupil(OPD[0], False, inner_diam = 0.8)
     fig.tight_layout()
     plt.savefig('T0NA10.eps', format = 'eps', dpi = 200)
 
 
-    fig = IMshow_pupil(OPD[1], False)
+    fig = IMshow_pupil(OPD[1], False, inner_diam = 0.8)
     fig.tight_layout()
     plt.savefig('T15NA10.eps', format = 'eps', dpi = 200)
 
-    fig = IMshow_pupil(OPD[2], False)
+    fig = IMshow_pupil(OPD[2], False, inner_diam = 0.8)
     fig.tight_layout()
     plt.savefig('T30NA10.eps', format = 'eps', dpi = 200)
 
-    fig = IMshow_pupil(OPD[3], False)
+    fig = IMshow_pupil(OPD[3], False, crop = 0.8)
     fig.tight_layout()
-    plt.savefig('T40NA10.eps', format = 'eps', dpi = 200)
+    plt.savefig('T45NA10.eps', format = 'eps', dpi = 200)
+
+
+    OPD_base = OPS[0]
+
+    fig = IMshow_pupil(OPD[1]-OPD_base, False)
+    fig.tight_layout()
+    plt.savefig('diff_T15NA10.eps', format = 'eps', dpi = 200)
+
+    fig = IMshow_pupil(OPD[2]-OPD_base, False)
+    fig.tight_layout()
+    plt.savefig('diff_T30NA10.eps', format = 'eps', dpi = 200)
+
+    fig = IMshow_pupil(OPD[3]-OPD_base, False)
+    fig.tight_layout()
+    plt.savefig('diff_T45NA10.eps', format = 'eps', dpi = 200)
+
 
     kk = xx[:-1]/N_radius
     secx_0 = OPD[0][N_radius,:-1]
+    secx_15 = OPD[1][N_radius,:-1]
+    secx_30 = OPD[2][N_radius, :-1]
+    secx_45 = OPD[3][N_radius, :-1]
     secy_0 = OPD[0][:-1, N_radius]
     secy_15 = OPD[1][:-1, N_radius]
     secy_30 = OPD[2][:-1, N_radius]
     secy_45 = OPD[3][:-1, N_radius]
-    secx_15 = OPD[1][N_radius,:-1]
-    secx_30 = OPD[2][N_radius, :-1]
-    secx_45 = OPD[3][N_radius, :-1]
-    fig = plt.figure(figsize = (7.5, 4))
+    fig = plt.figure(figsize = (6.8, 4))
     plt.plot(kk, secx_0,'-g', linewidth = 2, label = '0 degree')
     plt.plot(kk, secx_15, '-r', linewidth = 2, label = '15 degree')
     plt.plot(kk, secx_30, '-b',linewidth = 2, label = '30 degree')
     plt.plot(kk, secx_45, '--k', linewidth = 2, label = '45 degree')
-    plt.plot([-0.8, -0.8], [-10, 10], '-.m', linewidth = 2)
-    plt.plot([0.8, 0.8], [-10, 10], '-.m', linewidth = 2)
-    plt.legend()
+    #plt.plot([-0.8, -0.8], [-10, 10], '-.m', linewidth = 2)
+    #plt.plot([0.8, 0.8], [-10, 10], '-.m', linewidth = 2)
+    plt.legend(fontsize = 14)
     plt.xlabel('NA')
     plt.ylabel('Aberration')
     plt.ylim([-7,7])
     # ax.plot(xx[:-1]/N_radius, secy_0, '-g')
     plt.savefig('cross_xNA10.eps', format = 'eps', dpi = 200)
 
-    fig = plt.figure(figsize = (7.5, 4))
+    fig = plt.figure(figsize = (6.8, 4))
     plt.plot(kk, secy_0,'-g', linewidth = 2, label = '0 degree')
     plt.plot(kk, secy_15, '-r', linewidth = 2, label = '15 degree')
     plt.plot(kk, secy_30, '-b',linewidth = 2, label = '30 degree')
     plt.plot(kk, secy_45, '--k', linewidth = 2, label = '45 degree')
-    plt.plot([-0.8, -0.8], [-7, 7], '-.m', linewidth = 2)
-    plt.plot([0.8, 0.8], [-7, 7], '-.m', linewidth = 2)
-    plt.legend()
+    #plt.plot([-0.8, -0.8], [-7, 7], '-.m', linewidth = 2)
+    #plt.plot([0.8, 0.8], [-7, 7], '-.m', linewidth = 2)
+    plt.legend(fontsize = 14)
     plt.xlabel('NA')
     plt.ylabel('Aberration')
     plt.ylim([-7,7])

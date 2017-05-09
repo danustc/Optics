@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def IMshow_pupil(pupil, axnum = True):
+def IMshow_pupil(pupil, axnum = True, c_scale = None, crop = None, inner_diam= None):
     '''
     display a pupil function in 2D
     '''
@@ -19,17 +19,28 @@ def IMshow_pupil(pupil, axnum = True):
     [MX, MY] = np.meshgrid(xx,yy)
     fig = plt.figure(figsize=(5.0,4.0))
     ax = fig.add_subplot(111)
-
-    ax.set_ylim([-1, 1])
-    ax.set_xlim([-1, 1])
+    if crop is None:
+        ax.set_ylim([-1, 1])
+        ax.set_xlim([-1, 1])
+    else:
+        ax.set_ylim([-crop, crop])
+        ax.set_xlim([-crop, crop])
     if (axnum == False):
         ax.get_yaxis().set_visible(False)
         ax.get_xaxis().set_visible(False)
         # fig.axes.get_yaxis().set_visible(False)
     pcm = ax.pcolor(MX, MY, pupil, cmap = 'RdYlBu_r')
-    fig.colorbar(pcm, ax = ax, extend='max')
+    if(c_scale is None):
+        fig.colorbar(pcm, ax = ax, extend='max')
+    else:
+        fig.colorbar(pcm, ax = ax, vmin = c_scale[0], vmax = c_scale[1])
+
+    if(inner_diam is not None):
+        cmark = plt.Circle((0,0), inner_diam, color= 'w', ls = '--', linewidth = 2, fill = False)
+        ax.add_artist(cmark)
 
     return fig  # return the figure handle
+
 
 
 def zern_display(z_coeffs, z0 = 4, ylim = None):
@@ -89,10 +100,10 @@ def pupil_showcross(pf):
     yy = (np.arange(NY)-ry)/ry
     xx = (np.arange(NX)-rx)/rx
     [MX, MY] = np.meshgrid(xx,yy)
-    figp = plt.figure(figsize = (8,4.5))
-    grid_size = (1,3)
-    plt.subplot2grid(grid_size,(0,0), rowspan = 1, colspan = 1)
-    plt.subplot2grid(grid_size,(0,1), rowspan = 1, colspan = 2)
+    figp = plt.figure(figsize = (7.9,3.2))
+    grid_size = (1,5)
+    plt.subplot2grid(grid_size,(0,0), rowspan = 1, colspan = 2)
+    plt.subplot2grid(grid_size,(0,2), rowspan = 1, colspan = 3)
     ax1, ax2 = figp.axes
     ax1.pcolor(MX,MY,pf,cmap = 'RdYlBu_r')
     ax1.get_xaxis().set_visible(False)
@@ -103,6 +114,8 @@ def pupil_showcross(pf):
     ax2.set_xlabel('k', fontsize = 14)
     ax2.set_ylabel('Wavelength', fontsize = 14)
     ax2.set_ylim([-1,1])
+    ax2.legend(['x', 'y'], fontsize=12)
+    ax2.set_xticks([-1,-0.5,0,0.5,1] )
 
     plt.tight_layout()
     return figp
