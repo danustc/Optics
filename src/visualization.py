@@ -6,34 +6,38 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def IMshow_pupil(pupil, axnum = True, c_scale = None, crop = None, inner_diam= None):
+def IMshow_pupil(pupil_raw, axnum = True, c_scale = None, crop = None, inner_diam= None):
     '''
     display a pupil function in 2D
     '''
+    pupil = np.copy(pupil_raw)
     NY, NX = pupil.shape
     ry = int(NY/2.)
     rx = int(NX/2.)
     # print(rx, ry)
     yy = (np.arange(NY)-ry)/ry
     xx = (np.arange(NX)-rx)/rx
-    [MX, MY] = np.meshgrid(xx,yy)
     fig = plt.figure(figsize=(5.0,4.0))
     ax = fig.add_subplot(111)
+    [MX, MY] = np.meshgrid(xx,yy)
     if crop is None:
         ax.set_ylim([-1, 1])
         ax.set_xlim([-1, 1])
     else:
         ax.set_ylim([-crop, crop])
         ax.set_xlim([-crop, crop])
+        cropped = np.sqrt(MX**2+MY**2)> crop
+        pupil[cropped] = 0
     if (axnum == False):
         ax.get_yaxis().set_visible(False)
         ax.get_xaxis().set_visible(False)
         # fig.axes.get_yaxis().set_visible(False)
-    pcm = ax.pcolor(MX, MY, pupil, cmap = 'RdYlBu_r')
     if(c_scale is None):
+        pcm = ax.pcolor(MX, MY, pupil, cmap = 'RdYlBu_r')
         fig.colorbar(pcm, ax = ax, extend='max')
     else:
-        fig.colorbar(pcm, ax = ax, vmin = c_scale[0], vmax = c_scale[1])
+        pcm = ax.pcolor(MX, MY, pupil, cmap = 'RdYlBu_r',vmin = c_scale[0], vmax = c_scale[1])
+        fig.colorbar(pcm, ax = ax, extend = 'max' )
 
     if(inner_diam is not None):
         cmark = plt.Circle((0,0), inner_diam, color= 'w', ls = '--', linewidth = 2, fill = False)
