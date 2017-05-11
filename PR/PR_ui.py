@@ -50,6 +50,13 @@ class UI(UI_interface._UI):
             NA_input = float(self._ui.lineEdit_NA.text())
         self.NA = NA
 
+    def set_nfrac(self, nfrac = None):
+        if ncrac is None:
+            nfrac = float(self._ui.lineEdit_nfrac.text())
+        self._core.set_nfrac(nfrac)
+
+
+
 # ------------------------Test of the module------------
 def main():
     pr_core = Core()

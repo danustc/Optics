@@ -1,7 +1,8 @@
 """
 Created by Dan Xie on 07/15/2016
-Last edit: 05/04/2017
+Last edit: 05/11/2017
 Class PSF_PF retrieves a the pupil plane from a given PSF measurement
+Need to use @setter and @property functions to simplify this.
 """
 
 # This should be shaped into an independent module 
@@ -26,10 +27,37 @@ class Core(object):
         self.dx = None
         #self.dx = dx
         self.l = None
-        self.n = None
-        self.NA = None
+        self.nfrac(1.33)
+        self.NA(1.0)
         self.cf = None
         print("Initialized!")
+    # -----------------------Below is a couple of setting functions ---------------
+    @property
+    def nfrac(self):
+        return self._nfrac
+
+    @nfrac.setter
+    def nfrac(self,new_nfrac):
+        self._nfrac = new_nfrac
+
+    @property
+    def NA(self):
+        return self._NA
+
+    @NA.setter
+    def NA(self, new_NA)
+        self._NA = new_NA
+
+    @property
+    def lcenter(self):
+        return self.l
+
+    @lcenter.setter
+    def lcenter(self, new_lcenter):
+        # set the central wavelength
+        self.l = new_lcenter
+
+
 
     def load_psf(self,psf_path):
         '''
@@ -42,14 +70,9 @@ class Core(object):
 
 
 
-    def pupil_Simulation(self, dx, ld, nrefrac, NA, obj_fl, n_wave, d_wave):
+    def pupil_Simulation(self, n_wave, d_wave):
         # simulate a pupil function using given parameters; update the list
-        self.PF=pupil.Simulation(self.nx, dx,ld,nrefrac,NA,fl,wavelengths=n_wave, wave_step = d_wave) # initialize the pupil function
-        self.dx = dx
-        self.l = ld
-        self.n = nrefrac
-        self.NA = NA
-        self.fl = obj_fl
+        self.PF=pupil.Simulation(self.nx, self.dx,self.l,self.nrefrac,self.NA,self.cf,wavelengths=n_wave, wave_step = d_wave) # initialize the pupil function
         self.n_wave = n_wave
         self.d_wave = d_wave
 
