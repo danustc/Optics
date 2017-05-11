@@ -4,6 +4,7 @@ updated by Dan on 12/15
 
 import matplotlib.pyplot as plt
 import numpy as np
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def IMshow_pupil(pupil_raw, axnum = True, c_scale = None, crop = None, inner_diam= None):
@@ -17,7 +18,7 @@ def IMshow_pupil(pupil_raw, axnum = True, c_scale = None, crop = None, inner_dia
     # print(rx, ry)
     yy = (np.arange(NY)-ry)/ry
     xx = (np.arange(NX)-rx)/rx
-    fig = plt.figure(figsize=(5.0,4.0))
+    fig = plt.figure(figsize=(3.0,3.5))
     ax = fig.add_subplot(111)
     [MX, MY] = np.meshgrid(xx,yy)
     if crop is None:
@@ -34,15 +35,17 @@ def IMshow_pupil(pupil_raw, axnum = True, c_scale = None, crop = None, inner_dia
         # fig.axes.get_yaxis().set_visible(False)
     if(c_scale is None):
         pcm = ax.pcolor(MX, MY, pupil, cmap = 'RdYlBu_r')
-        fig.colorbar(pcm, ax = ax, extend='max')
+        cbar = fig.colorbar(pcm, ax = ax, extend = 'max' , orientation= 'horizontal')
+        cbar.ax.tick_params(labelsize = 12)
     else:
         pcm = ax.pcolor(MX, MY, pupil, cmap = 'RdYlBu_r',vmin = c_scale[0], vmax = c_scale[1])
-        fig.colorbar(pcm, ax = ax, extend = 'max' )
+        cbar = fig.colorbar(pcm, ax = ax, extend = 'max' , orientation = 'horizontal', pad = 0.05)
+        cbar.ax.tick_params(labelsize = 12)
 
     if(inner_diam is not None):
         cmark = plt.Circle((0,0), inner_diam, color= 'w', ls = '--', linewidth = 2, fill = False)
         ax.add_artist(cmark)
-
+    plt.tight_layout()
     return fig  # return the figure handle
 
 
@@ -54,7 +57,7 @@ def zern_display(z_coeffs, z0 = 4, ylim = None):
     z0: the starting mode (index 4 means 5th zernike mode)
     '''
     zrange = z0 + np.arange(len(z_coeffs[z0:]))+1
-    fig = plt.figure(figsize=(6.0, 3.0))
+    fig = plt.figure(figsize=(6.0, 2.5))
     ax = fig.add_subplot(111)
     ax.bar(zrange, z_coeffs[z0:], width = 0.8, color = 'g')
     ax.set_xlim([z0-0.5, len(z_coeffs)+0.5])

@@ -79,7 +79,7 @@ def main():
         raw_opd = opd_array.reshape(ny, nx)
         raw_opd[np.logical_not(mask)]=0
         z_coeffs = zern.fit_zernike(raw_opd, rad = N_radius+0.5, nmodes = 22, zern_data={})[0]
-        fig_zd = zern_display(z_coeffs, z0=4,ylim = [-1.8,0.8])
+        fig_zd = zern_display(z_coeffs, z0=4,ylim = [-0.5,0.7])
         fig_zd.savefig('zfit_'+str(ip*15)+'_NA10.eps', format  = 'eps', dpi = 200)
 
 
@@ -123,7 +123,7 @@ def main():
     plt.savefig('T45NA10.eps', format = 'eps', dpi = 200)
 
 
-    OPD_base = OPS[0]
+    OPD_base = OPD[0]
 
     fig = IMshow_pupil(OPD[1]-OPD_base, False)
     fig.tight_layout()

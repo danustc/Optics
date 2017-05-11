@@ -41,7 +41,7 @@ def pupil_crop(raw_pupil, mask = True, rad = 49):
 
 
 
-def load_folder_psf(folder, flag = 'mod', dz = 0.50, dr = 0.102, verbose = False):
+def load_folder_psf(folder, flag = 'mod', dz = 0.40, dr = 0.102, verbose = False):
     psf_list = glob.glob(folder+ '*'+flag+'*.npy')
     psf_list.sort(key = os.path.getmtime)
     n_psf = len(psf_list)
@@ -109,22 +109,14 @@ def load_fwhm(folder, flag = 'fwhm'):
 
 
 def main():
-    date_folder = 'May03_2017/'#T0_second_round/'
-    FWHM = load_folder_psf(path_root+date_folder)
+    date_folder = 'May08_2017/'#T0_second_round/'
+    FWHM = load_folder_psf(path_root+date_folder, flag = 'CM*mod')
     print(FWHM)
-    #load_fwhm(path_root+date_folder, flag = 'FWHM')
-    #psf_list = glob.glob(path_root+date_folder+'*mod*.npy')
-    #psf_list.sort(key = os.path.getmtime)
-    #psf_best = np.load(psf_list[-1])
-    #nz, ny, nx = psf_best.shape
-    #hy = int(ny/2)
-    #hx = int(nx/2)
-    #trunc = 50
-    #ax.imshow(psf_best[zp, hy-trunc:hy+trunc, hx-trunc:hx+trunc], cmap = 'Greys_r', interpolation = 'none')
 
-    #np.save(path_root+date_folder+ 'FWHM_rd3', np.array(FWHM))
-    #load_folder_pupil(path_root+date_folder+'phase/', radius = 49)
-    #load_folder_pupil(path_root+date_folder+'zfit/', radius = 256)
+    np.save(path_root+date_folder+ 'FWHM_MT', np.array(FWHM))
+    load_fwhm(path_root+date_folder, flag = 'FWHM')
+    load_folder_pupil(path_root+date_folder+'phase/', radius = 49)
+    load_folder_pupil(path_root+date_folder+'zfit/', radius = 256)
 
 
 
