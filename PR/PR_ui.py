@@ -38,22 +38,43 @@ class UI(UI_interface._UI):
 
 
 
-
     def retrievePF(self):
         # retrieve PF from psf
         print("function connected!")
+        mask_size = int(self._ui.lineEdit_mask.text())
+        self.set_dz()
+        self._core.retrievePF(self.dz, mask_size)
 
 
-    # ------Below is a couple of setting functions ------
+    # ------Below are a couple of setting functions ------
     def set_NA(self, NA_input = None):
         if NA_input is None:
             NA_input = float(self._ui.lineEdit_NA.text())
-        self.NA = NA
+        self.NA = NA_input
 
     def set_nfrac(self, nfrac = None):
         if ncrac is None:
             nfrac = float(self._ui.lineEdit_nfrac.text())
         self._core.set_nfrac(nfrac)
+
+    def set_dz(self, dz_input = None):
+        if dz_input is None:
+           dz_input = float(self._ui.lineEdit_dz.text())
+        self.dz = dz # this is not stored in the core program.
+
+
+    # ------Below are a couple of displaying functions ------------
+    def display_psf(self, dimension = 0):
+        '''
+        display the psf across a plane.
+        dimension = 0: lateral, 1: xz plane, 2: yz plane
+        '''
+
+
+
+
+        self._ui.mpl_psf.figure.axes[0].matshow(np.log(psf_slice, cmap = 'Greys_r'))
+        self._ui.mpl_psf.draw()
 
 
 

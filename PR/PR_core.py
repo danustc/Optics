@@ -69,7 +69,6 @@ class Core(object):
         self.nx = np.min(ny,nx)
 
 
-
     def pupil_Simulation(self, n_wave, d_wave):
         # simulate a pupil function using given parameters; update the list
         self.PF=pupil.Simulation(self.nx, self.dx,self.l,self.nrefrac,self.NA,self.cf,wavelengths=n_wave, wave_step = d_wave) # initialize the pupil function
@@ -77,18 +76,17 @@ class Core(object):
         self.d_wave = d_wave
 
 
-
-    def retrievePF(self, dz, bscale = 1.00, psf_diam = 50 ):
+    def retrievePF(self, dz, psf_diam):
         # an ultrasimplified version
 
-        z_offset, zz = psf_zplane(self.PSF, dz, self.l/3.2) # This should be the reason!!!! >_<
+        z_offset, zz = psf_zplane(self.PSF, dz, self.lcenter/3.2) # This should be the reason!!!! >_<
         A = self.PF.plane
         Mx, My = np.meshgrid(np.arange(self.nx)-self.nx/2., np.arange(self.nx)-self.nx/2.)
         r_pxl = _msqrt(Mx**2 + My**2)
-        bk_inner = 16
-        bk_outer = 20
+        bk_inner = psf_diam
+        bk_outer = (psf_diam+self.nx/2)/2 # updated on 05/15
         hcyl = np.array(self.nz*[np.logical_and(r_pxl>=bk_inner, r_pxl<bk_outer)])
-        background = np.mean(self.PSF[hcyl])*bscale
+        background = np.mean(self.PSF[hcyl])
         print( "   background = ", background)
         print( "   z_offset = ", z_offset)
         PSF_sample = self.PSF
