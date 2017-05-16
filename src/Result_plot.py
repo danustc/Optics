@@ -9,6 +9,33 @@ import geom_optics.geometry_elements
 import libtim.zern as zern
 from visualization import zern_display, IMshow_pupil
 
+def cross_plot(cr_group, ylim, label_flags, NA=1.0, fsize = (5,3)):
+    '''
+    do the cross_section plot
+    cr_group: the array of cross_plot
+    '''
+    nd, nc = cr_group.shape
+    N_radius = int(nd/2)
+    kk = NA*(np.arange(nd)-N_radius+0.5)/N_radius # the k-axis, from -NA
+    figc = plt.figure(figsize = fsize)
+    ax=figc.add_subplot(111)
+    ax.plot(kk, cr_group, linewidth = 2)
+    ax.plot([-0.8, -0.8], [-10, 10], '-.m', linewidth = 1)
+    ax.plot([0.8, 0.8], [-10, 10], '-.m', linewidth = 1)
+    ax.legend(label_flags, fontsize = 12)
+    ax.set_xlabel('NA')
+    ax.set_ylabel('Aberration')
+    ad.set_ylim(ylim)
+    ax.set_xlim([-1, 1])
+    ax.set_xticks(np.arange(-1,1.1,0.2),fontsize = 12)
+
+    plt.tight_layout()
+
+
+    return figc
+
+
+
 def main():
 
 #-- Plot... ------------------------g------------------------

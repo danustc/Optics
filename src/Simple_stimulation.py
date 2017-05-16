@@ -26,12 +26,12 @@ def main():
     xx = np.arange(-N_radius, N_radius+1)+1.0e-06
     [MX, MY] = np.meshgrid(xx,xx)
     MR = np.sqrt(MX**2 + MY**2)
-    mask = MR<=N_radius
+    mask = MR<N_radius
     M_inc = np.arctan(MR/h)
     M_rot = np.arccos(MX/MR)
 
 
-    g_tilt = np.array([0.01, 15., 30.01, 45.0])*np.pi/180.
+    g_tilt = np.array([0.01, 15, 30, 40, 45.0])*np.pi/180. #tilt angles 
     M_sl = Objective_aberration.cone_to_plane(np.pi-M_inc, a_max) # the mapped lateral position
 
     k_vec = Objective_aberration.incident_vec(np.pi-M_inc, M_rot)
@@ -80,10 +80,11 @@ def main():
         raw_opd[np.logical_not(mask)]=0
         z_coeffs = zern.fit_zernike(raw_opd, rad = N_radius+0.5, nmodes = 22, zern_data={})[0]
         fig_zd = zern_display(z_coeffs, z0=4,ylim = [-0.5,0.7])
-        fig_zd.savefig('zfit_'+str(ip*15)+'_NA10.eps', format  = 'eps', dpi = 200)
+        fig_zd.savefig('zfit_'+str(ip*5+30)+'_NA10.eps', format  = 'eps', dpi = 200)
 
 
         z_deduct = z_coeffs[0:4]
+        z_deduct[:3] = 0
         deduct_opd = zern.calc_zernike(z_deduct, rad = N_radius+0.5, mask = True)
         OPD_mat.append(raw_opd-deduct_opd)
 
@@ -142,22 +143,26 @@ def main():
     secx_0 = OPD[0][N_radius,:-1]
     secx_15 = OPD[1][N_radius,:-1]
     secx_30 = OPD[2][N_radius, :-1]
-    secx_45 = OPD[3][N_radius, :-1]
+    secx_40 = OPD[3][N_radius, :-1]
+    secx_45 = OPD[4][N_radius, :-1]
     secy_0 = OPD[0][:-1, N_radius]
     secy_15 = OPD[1][:-1, N_radius]
     secy_30 = OPD[2][:-1, N_radius]
-    secy_45 = OPD[3][:-1, N_radius]
+    secy_40 = OPD[3][:-1, N_radius]
+    secy_45 = OPD[4][:-1, N_radius]
     fig = plt.figure(figsize = (6.8, 4))
-    plt.plot(kk, secx_0,'-g', linewidth = 2, label = '0 degree')
-    plt.plot(kk, secx_15, '-r', linewidth = 2, label = '15 degree')
-    plt.plot(kk, secx_30, '-b',linewidth = 2, label = '30 degree')
-    plt.plot(kk, secx_45, '--k', linewidth = 2, label = '45 degree')
+    psecx_0 = secx_0 # for zero-tilt, no CL correction is needed.
+    plt.plot(kk, secx_0-secx_0[N_radius],'-g', linewidth = 2, label = '0 degree')
+    plt.plot(kk, secx_15-secx_15[N_radius], '-r', linewidth = 2, label = '30 degree')
+    plt.plot(kk, secx_30-secx_30[N_radius], '-b',linewidth = 2, label = '35 degree')
+    plt.plot(kk, secx_40-secx_40[N_radius], '-c',linewidth = 2, label = '40 degree')
+    plt.plot(kk, secx_45-secx_45[N_radius], '--k', linewidth = 2, label = '45 degree')
     #plt.plot([-0.8, -0.8], [-10, 10], '-.m', linewidth = 2)
     #plt.plot([0.8, 0.8], [-10, 10], '-.m', linewidth = 2)
     plt.legend(fontsize = 14)
     plt.xlabel('NA')
     plt.ylabel('Aberration')
-    plt.ylim([-7,7])
+    #plt.ylim([-7,7])
     # ax.plot(xx[:-1]/N_radius, secy_0, '-g')
     plt.savefig('cross_xNA10.eps', format = 'eps', dpi = 200)
 
@@ -171,7 +176,7 @@ def main():
     plt.legend(fontsize = 14)
     plt.xlabel('NA')
     plt.ylabel('Aberration')
-    plt.ylim([-7,7])
+    #plt.ylim([-7,7])
     plt.savefig('cross_yNA10.eps', format = 'eps', dpi = 200)
 
     #------------------------Reflectance
