@@ -18,15 +18,12 @@ def IMshow_pupil(pupil_raw, axnum = True, c_scale = None, crop = None, inner_dia
     # print(rx, ry)
     yy = (np.arange(NY)-ry)/ry
     xx = (np.arange(NX)-rx)/rx
-    fig = plt.figure(figsize=(3.0,3.5))
+    fig = plt.figure(figsize=(3.0,3.4))
     ax = fig.add_subplot(111)
     [MX, MY] = np.meshgrid(xx,yy)
-    if crop is None:
-        ax.set_ylim([-1, 1])
-        ax.set_xlim([-1, 1])
-    else:
-        ax.set_ylim([-crop, crop])
-        ax.set_xlim([-crop, crop])
+    ax.set_ylim([-1, 1])
+    ax.set_xlim([-1, 1])
+    if crop is not None:
         cropped = np.sqrt(MX**2+MY**2)> crop
         pupil[cropped] = 0
     if (axnum == False):
@@ -39,7 +36,7 @@ def IMshow_pupil(pupil_raw, axnum = True, c_scale = None, crop = None, inner_dia
         cbar.ax.tick_params(labelsize = 12)
     else:
         pcm = ax.pcolor(MX, MY, pupil, cmap = 'RdYlBu_r',vmin = c_scale[0], vmax = c_scale[1])
-        cbar = fig.colorbar(pcm, ax = ax, extend = 'max' , orientation = 'horizontal', pad = 0.05)
+        cbar = fig.colorbar(pcm, ax = ax, extend = 'max' , orientation = 'horizontal', pad = 0.04)
         cbar.ax.tick_params(labelsize = 12)
 
     if(inner_diam is not None):

@@ -12,7 +12,7 @@ from visualization import zern_display, IMshow_pupil
 def main():
     d = 170 # microns, the thickness of the coverslide
     n1 = 1.33
-    n2 = 1.50
+    n2 = 1.52
     N_radius = 64
     NA =1.0
     #NA = 0.8
@@ -20,13 +20,12 @@ def main():
     a_comp = np.arcsin(0.8/n1)
     h = N_radius/np.tan(a_max)
     r_comp = h*np.tan(a_comp)
-    rx = r_comp*np.cos(2*np.pi*np.arange(101)/100.)
-    ry = r_comp*np.sin(2*np.pi*np.arange(101)/100.)
+    #rx = r_comp*np.cos(2*np.pi*np.arange(101)/100.)
+    #ry = r_comp*np.sin(2*np.pi*np.arange(101)/100.)
 
-    xx = np.arange(-N_radius, N_radius+1)+1.0e-06
+    xx = np.arange(-N_radius, N_radius+1)+1.0e-07
     [MX, MY] = np.meshgrid(xx,xx)
     MR = np.sqrt(MX**2 + MY**2)
-    mask = MR<N_radius
     M_inc = np.arctan(MR/h)
     M_rot = np.arccos(MX/MR)
 
@@ -41,6 +40,8 @@ def main():
 
     NK = ny*nx
     NN = len(g_tilt)
+    NA_crop = np.ones(NN)
+    NA_crop[-1] = 0.80
     lam = 0.5150 # the wavelength
     RS_mat = []
     RP_mat = []
@@ -51,6 +52,8 @@ def main():
         '''
         Iterate through NN vectors
         '''
+        NA_percent = NA_crop[ip] # the percentage of NA used in zernike fitting 
+        ncut = int(NA_percent*N_radius)
         nv = n_vec[:,ip]
         reflect_s = np.zeros(NK)
         reflect_p = np.zeros(NK)
@@ -72,21 +75,25 @@ def main():
         opd_array = opd_array/lam
         rsm = reflect_s.reshape(ny, nx)
         rpm = reflect_p.reshape(ny, nx)
+        mask = MR<=(NA_percent*N_radius)
         rsm[np.logical_not(mask)] = 1.
         rpm[np.logical_not(mask)] = 1.
         RS_mat.append(rsm)
         RP_mat.append(rpm)
         raw_opd = opd_array.reshape(ny, nx)
-        raw_opd[np.logical_not(mask)]=0
-        z_coeffs = zern.fit_zernike(raw_opd, rad = N_radius+0.5, nmodes = 22, zern_data={})[0]
-        fig_zd = zern_display(z_coeffs, z0=4,ylim = [-0.5,0.7])
-        fig_zd.savefig('zfit_'+str(ip*5+30)+'_NA10.eps', format  = 'eps', dpi = 200)
+        raw_opd[np.logical_not(mask)] = 0 #crop the OPD 
+        z_coeffs = zern.fit_zernike(raw_opd[N_radius-ncut:N_radius+ncut, N_radius-ncut:N_radius+ncut], rad = ncut, nmodes = 22, zern_data={})[0]
 
+    # remove the tip-tilt only or remove the defocus?
+        z_deduct = z_coeffs[0:3]
+        deduct_opd = zern.calc_zernike(z_deduct, rad = ncut+0.5, zern_data = {}, mask = True)
+        op_base = np.zeros_like(raw_opd)
+        op_center = raw_opd[N_radius-ncut:N_radius+ncut+1, N_radius-ncut:N_radius+ncut+1]-deduct_opd
+        op_base[N_radius-ncut:N_radius+ncut+1,N_radius-ncut:N_radius+ncut+1] =op_center
+        op_base[np.logical_not(mask)] = 0
+        OPD_mat.append(op_base)
+        # end for ip
 
-        z_deduct = z_coeffs[0:4]
-        z_deduct[:3] = 0
-        deduct_opd = zern.calc_zernike(z_deduct, rad = N_radius+0.5, mask = True)
-        OPD_mat.append(raw_opd-deduct_opd)
 
     RSM  = np.array(RS_mat)
     RPM  = np.array(RP_mat)
@@ -97,107 +104,10 @@ def main():
     results['rsm'] = RSM
     results['rpm'] = RPM
     results['OPD'] = OPD
-    np.savez('results', **results)
-
-#-- Plot... ------------------------g------------------------
-    vmn = -8
-    vmx = 10
-
-    plt.close('all')
+    np.savez('results_0-3removed', **results)
 
 
-    fig = IMshow_pupil(OPD[0], False, inner_diam = 0.8)
-    fig.tight_layout()
-    plt.savefig('T0NA10.eps', format = 'eps', dpi = 200)
-
-
-    fig = IMshow_pupil(OPD[1], False, inner_diam = 0.8)
-    fig.tight_layout()
-    plt.savefig('T15NA10.eps', format = 'eps', dpi = 200)
-
-    fig = IMshow_pupil(OPD[2], False, inner_diam = 0.8)
-    fig.tight_layout()
-    plt.savefig('T30NA10.eps', format = 'eps', dpi = 200)
-
-    fig = IMshow_pupil(OPD[3], False, crop = 0.8)
-    fig.tight_layout()
-    plt.savefig('T45NA10.eps', format = 'eps', dpi = 200)
-
-
-    OPD_base = OPD[0]
-
-    fig = IMshow_pupil(OPD[1]-OPD_base, False)
-    fig.tight_layout()
-    plt.savefig('diff_T15NA10.eps', format = 'eps', dpi = 200)
-
-    fig = IMshow_pupil(OPD[2]-OPD_base, False)
-    fig.tight_layout()
-    plt.savefig('diff_T30NA10.eps', format = 'eps', dpi = 200)
-
-    fig = IMshow_pupil(OPD[3]-OPD_base, False)
-    fig.tight_layout()
-    plt.savefig('diff_T45NA10.eps', format = 'eps', dpi = 200)
-
-
-    kk = xx[:-1]/N_radius
-    secx_0 = OPD[0][N_radius,:-1]
-    secx_15 = OPD[1][N_radius,:-1]
-    secx_30 = OPD[2][N_radius, :-1]
-    secx_40 = OPD[3][N_radius, :-1]
-    secx_45 = OPD[4][N_radius, :-1]
-    secy_0 = OPD[0][:-1, N_radius]
-    secy_15 = OPD[1][:-1, N_radius]
-    secy_30 = OPD[2][:-1, N_radius]
-    secy_40 = OPD[3][:-1, N_radius]
-    secy_45 = OPD[4][:-1, N_radius]
-    fig = plt.figure(figsize = (6.8, 4))
-    psecx_0 = secx_0 # for zero-tilt, no CL correction is needed.
-    plt.plot(kk, secx_0-secx_0[N_radius],'-g', linewidth = 2, label = '0 degree')
-    plt.plot(kk, secx_15-secx_15[N_radius], '-r', linewidth = 2, label = '30 degree')
-    plt.plot(kk, secx_30-secx_30[N_radius], '-b',linewidth = 2, label = '35 degree')
-    plt.plot(kk, secx_40-secx_40[N_radius], '-c',linewidth = 2, label = '40 degree')
-    plt.plot(kk, secx_45-secx_45[N_radius], '--k', linewidth = 2, label = '45 degree')
-    #plt.plot([-0.8, -0.8], [-10, 10], '-.m', linewidth = 2)
-    #plt.plot([0.8, 0.8], [-10, 10], '-.m', linewidth = 2)
-    plt.legend(fontsize = 14)
-    plt.xlabel('NA')
-    plt.ylabel('Aberration')
-    #plt.ylim([-7,7])
-    # ax.plot(xx[:-1]/N_radius, secy_0, '-g')
-    plt.savefig('cross_xNA10.eps', format = 'eps', dpi = 200)
-
-    fig = plt.figure(figsize = (6.8, 4))
-    plt.plot(kk, secy_0,'-g', linewidth = 2, label = '0 degree')
-    plt.plot(kk, secy_15, '-r', linewidth = 2, label = '15 degree')
-    plt.plot(kk, secy_30, '-b',linewidth = 2, label = '30 degree')
-    plt.plot(kk, secy_45, '--k', linewidth = 2, label = '45 degree')
-    #plt.plot([-0.8, -0.8], [-7, 7], '-.m', linewidth = 2)
-    #plt.plot([0.8, 0.8], [-7, 7], '-.m', linewidth = 2)
-    plt.legend(fontsize = 14)
-    plt.xlabel('NA')
-    plt.ylabel('Aberration')
-    #plt.ylim([-7,7])
-    plt.savefig('cross_yNA10.eps', format = 'eps', dpi = 200)
-
-    #------------------------Reflectance
-
-    fig = IMshow_pupil(T_aver[0], False)
-    fig.tight_layout()
-    plt.savefig('Trans0NA10.eps', format = 'eps', dpi = 200)
-
-    fig = IMshow_pupil(T_aver[1], False)
-    fig.tight_layout()
-    plt.savefig('Trans15NA10.eps', format = 'eps', dpi = 200)
-
-    fig = IMshow_pupil(T_aver[2], False)
-    fig.tight_layout()
-    plt.savefig('Trans30NA10.eps', format = 'eps', dpi = 200)
-
-    fig = IMshow_pupil(T_aver[3], False)
-    fig.tight_layout()
-    plt.savefig('Trans45NA10.eps', format = 'eps', dpi = 200)
-
-
+# ------------------------main program---------------------
 
 if __name__ == '__main__':
     main()
