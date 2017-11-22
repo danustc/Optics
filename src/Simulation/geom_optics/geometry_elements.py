@@ -1,6 +1,7 @@
 '''
 This file simulates the planes, lines in the Euclid space, and does the simplest vector analysis.
 Created by Dan on 12/04/2016.
+Last update: 11/21/2017.
 '''
 
 import numpy as np
@@ -38,3 +39,35 @@ def cone_to_plane(theta, a_max):
     h = 1./np.tan(a_max)
     sl = h*np.tan(theta)
     return sl
+
+
+def reflection(n_inc, k_inc, e_inc, normalize = False):
+    '''
+    Inputs:
+        n_vec: the normal vector of the reflective plane, unit vector.
+        k_inc: the k-vector of the incidental ray, unit vector.
+        e-inc: the e-vector of the incidental ray, must be perpendicular to k_vec, unit vector.
+    Output:
+        k_ref: the k-vector of the reflected ray
+        e_ref: the e-vector of the reflected ray
+    '''
+    if normalize:
+        n_inc/=np.linalg.norm(n_inc)
+        k_inc/=np.linalg.norm(k_inc)
+        e_inc/=np.linalg.norm(e_inc)
+
+    sv_raw = np.cross(k_inc, n_inc) # the raw s-vector, s-k-p forms a right-hand coordinate.
+    sin_inc = np.linalg.norm(sv_raw) # np.sin(incidental angle)
+    a_inc = np.arcsin(sin_inc) # the incident angle 
+    s_inc = sv_raw/sin_inc # the unit vector of s-polarization
+    p_inc = np.cross(s_inc, k_inc) # the unit vector of p-polarization
+    k_ref = -np.dot(k_inc, n_inc)*n_inc + np.cross(n_inc, sv_raw) #the norm of sv_raw is sin_inc
+    sp_inc = np.dot(e_inc,s_inc)*s_inc # the s-polarized component of the E-vector
+    pp_inc = np.dot(e_inc,p_inc)*p_inc # the p-polarized component of the E-vector 
+
+    p_ref = np.cross(s_inc, k_ref) # the unit vector of p-polarization in the reflected ray
+    pp_ref = np.linalg.norm(pp_inc)*p_ref
+    e_ref = sp_inc + pp_ref
+
+    return k_ref, e_ref # OK! Done.
+
