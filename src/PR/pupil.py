@@ -10,7 +10,7 @@ from scipy import fftpack as _fftpack
 from scipy import ndimage
 from numpy.lib.scimath import sqrt as _msqrt
 import tempfile as _tempfile
-# import pyfftw
+import pyfftw
 
 class Pupil(object):
     """
@@ -31,17 +31,6 @@ class Pupil(object):
     def unit_disk_to_spatial_radial_coordinate(self, unit_disk):
         # This is the real radius of the pupil plane on the deformable mirror
         return self.s_max * unit_disk
-
-
-
-    def apply_NA_restriction(self, PF):
-
-        '''
-        Sets all values of a given pupil function to zero that are out of NA range.
-        '''
-
-        PF[self.r>1] = 0
-        return PF
 
 
 
@@ -115,7 +104,7 @@ class Simulation(Pupil):
         self.theta = _np.arctan2(My,Mx) # Polar coordinate: angle
 
 
-    def pf2psf(self, PF, zs, intensity=True, verbose=False, use_pyfftw=False):
+    def pf2psf(self, PF, zs, intensity=True, verbose=False, use_pyfftw=True):
         """
         Computes the point spread function for a given pupil function.
 
@@ -163,15 +152,17 @@ class Simulation(Pupil):
 
         for i in range(nz):
             if verbose: print('Calculating PSF slice for z={0}um.'.format(zs[i]))
-#            
-            U = N*_fftpack.ifft2(_np.exp(2*_np.pi*1j*kz*zs[i])*PF)
+            if use_pyfftw:
+                aligned = pyfftw.n_byte_align(_np.exp(2*_np.pi*1j*kz*zs[i])*PF,16)
+                U = N * pyfftw.interfaces.numpy_fft.ifft2(aligned)
+            else:
+                U = N*_fftpack.ifft2(_np.exp(2*_np.pi*1j*kz*zs[i])*PF)
             for j in range(0,self.kzs.shape[0]):
-#                 if use_pyfftw:
-#                     pass
-#                     aligned = pyfftw.n_byte_align(_np.exp(2*_np.pi*1j*self.kzs[j]*zs[i])*PF,16)
-#                     U = U + N*pyfftw.interfaces.numpy_fft.ifft2(aligned)
-#                 else:
-                U = U + N*_fftpack.ifft2(_np.exp(2*_np.pi*1j*self.kzs[j]*zs[i])*PF)
+                if use_pyfftw:
+                     aligned = pyfftw.n_byte_align(_np.exp(2*_np.pi*1j*self.kzs[j]*zs[i])*PF,16)
+                     U = U + N*pyfftw.interfaces.numpy_fft.ifft2(aligned)
+                else:
+                     U = U + N*_fftpack.ifft2(_np.exp(2*_np.pi*1j*self.kzs[j]*zs[i])*PF)
             U = U/(1+self.kzs.shape[0])
             _slice_ = _fftpack.ifftshift(U)
             if intensity:
@@ -184,7 +175,7 @@ class Simulation(Pupil):
 
 
 
-    def psf2pf(self, PSF, zs, mu, A, nIterations=5, use_pyfftw=False, resetAmp=True,
+    def psf2pf(self, PSF, zs, mu, A, nIterations=5, use_pyfftw=True, resetAmp=False,
                symmeterize=False):
 
         '''
@@ -222,8 +213,8 @@ class Simulation(Pupil):
     # Normalization for fft2:
         N = _np.sqrt(self.nx*self.ny)
 
-#         if use_pyfftw:
-#             pyfftw.interfaces.cache.enable()
+        if use_pyfftw:
+            pyfftw.interfaces.cache.enable()
 
 #         mu_purpose = _np.random.randint(1,2, size = (nz, self.ny, self.nx))
 #         PSF += mu_purpose # To remove the zero pixel
@@ -244,9 +235,10 @@ class Simulation(Pupil):
             Uconj = _np.conj(U)
             #weave.blitz(expr2)
             Ic = mu + (U * Uconj) # should I have sqrt here instead of 
-
+            print("min", _np.min(PSF))
             minFunc = _np.mean(PSF*_np.log(PSF/Ic))
             print( 'Relative entropy per pixel:', minFunc)
+            #redChiSq = _np.mean((PSF-Ic)**2)
             redChiSq = _np.mean((PSF-Ic)**2)
             print( 'Reduced Chi square:', redChiSq)
 

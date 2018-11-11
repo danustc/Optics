@@ -3,7 +3,7 @@ This is the ui interface for phase retrieval.
 Created by Dan on 05/04/2017 (Happy Youth's Day!)
 '''
 import sys
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore
 import os
 
 
@@ -17,25 +17,23 @@ class _UI(object):
     '''
     Update log and brief instructions.
     '''
-    def __init__(self,design_path):
+    def __init__(self,core,design_path):
         # initialize the UI.
-        self._app = QtGui.QApplication(sys.argv)
-        self._window = QtGui.QWidget()
+        self._core = core
+        self._app = QtWidgets.QApplication(sys.argv)
+        self._window = QtWidgets.QWidget()
         self._window.closeEvent = self.shutDown
 
         ui_module = import_module(design_path)
         self._ui = ui_module.Ui_Form()
         try:
             self._ui.setupUi(self._window)
+            print("UI setup successful!")
         except:
-            self._window = QtGui.QMainWindow()
+            self._window = QtWidgets.QMainWindow()
             self._ui.setupUi(self._window)
+            print("UI setup successful!")
 
         self._window.show()
         self._app.exec_()
 
-    def shutDown(self, event):
-        '''
-        shut down the UI
-        '''
-        self._app.quit()

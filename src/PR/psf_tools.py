@@ -15,6 +15,7 @@ def gaussian(z, a, z0, w, b):
     return a * np.exp(-(z-z0)**2/w) + b
 
 
+
 def cylinder_cutter(dims,c_offset,rad1, rad2 = None):
     """
     return a cylinder-shaped 3D array
@@ -89,13 +90,13 @@ def psf_zplane(stack, dz, w0, de = 1):
     Don't mistake with psf_slice!
     '''
     nz, ny, nx = stack.shape
-    cy, cx = np.unravel_index(np.argmax(gf(stack,2)), (nz,ny,nx))[1:]
+    cy, cx = np.unravel_index(np.argmax(stack), (nz,ny,nx))[1:]
 
     zrange = (nz-1)*dz*0.5
     zz = np.linspace(-zrange, zrange, nz)
-    center_z = stack[:,cy-de:cy+de+1,cx-de:cx+de+1]
-    im_z = center_z.mean(axis=2).mean(axis=1)
-
+    #center_z = stack[:,cy-de:cy+de+1,cx-de:cx+de+1]
+    #im_z = center_z.mean(axis=2).mean(axis=1)
+    im_z = stack[:,cy, cx]
     b = np.mean((im_z[0],im_z[-1]))
     a = im_z.max() - b
 

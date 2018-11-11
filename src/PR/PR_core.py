@@ -25,10 +25,9 @@ class Core(object):
         self.PSF = None
         self.PF = None
         self.dx = None
-        #self.dx = dx
-        self.l = None
-        self.nfrac(1.33)
-        self.NA(1.0)
+        self.l= None
+        self._NA = None
+        self._nfrac = None
         self.cf = None
         print("Initialized!")
     # -----------------------Below is a couple of setting functions ---------------
@@ -45,7 +44,7 @@ class Core(object):
         return self._NA
 
     @NA.setter
-    def NA(self, new_NA)
+    def NA(self, new_NA):
         self._NA = new_NA
 
     @property
@@ -57,7 +56,19 @@ class Core(object):
         # set the central wavelength
         self.l = new_lcenter
 
+    @property
+    def pxl(self):
+        return self.dx
+    @pxl.setter
+    def pxl(self, new_pxl):
+        self.dx = new_pxl
 
+    @property
+    def objf(self):
+        return self.cf
+    @objf.setter
+    def objf(self, new_cf):
+        self.cf = new_cf
 
     def load_psf(self,psf_path):
         '''
@@ -65,33 +76,46 @@ class Core(object):
         '''
         PSF = np.load(psf_path)
         nz, ny, nx = PSF.shape
+        print(nz, ny, nx)
         self.PSF = PSF
-        self.nx = np.min(ny,nx)
+        self.nx = np.min([ny,nx])
+        self.nz = nz
+        print("psf loaded!")
 
 
     def pupil_Simulation(self, n_wave, d_wave):
         # simulate a pupil function using given parameters; update the list
-        self.PF=pupil.Simulation(self.nx, self.dx,self.l,self.nrefrac,self.NA,self.cf,wavelengths=n_wave, wave_step = d_wave) # initialize the pupil function
+        self.PF=pupil.Simulation(self.nx, self.dx,self.l,self.nfrac,self.NA,self.cf,wavelengths=n_wave, wave_step = d_wave) # initialize the pupil function
         self.n_wave = n_wave
         self.d_wave = d_wave
 
-
-    def retrievePF(self, dz, psf_diam):
-        # an ultrasimplified version
-
-        z_offset, zz = psf_zplane(self.PSF, dz, self.lcenter/3.2) # This should be the reason!!!! >_<
-        A = self.PF.plane
+    def background_reset(self, mask, psf_diam = 50):
+        '''
+        reset the background of the PSF
+        '''
         Mx, My = np.meshgrid(np.arange(self.nx)-self.nx/2., np.arange(self.nx)-self.nx/2.)
         r_pxl = _msqrt(Mx**2 + My**2)
         bk_inner = psf_diam
-        bk_outer = (psf_diam+self.nx/2)/2 # updated on 05/15
-        hcyl = np.array(self.nz*[np.logical_and(r_pxl>=bk_inner, r_pxl<bk_outer)])
+        bk_outer = mask
+        hcyl = np.array(self.nz*[np.logical_and(r_pxl>=bk_inner, r_pxl<bk_outer+1)])
+        incyl = np.array(self.nz*[r_pxl<60])
         background = np.mean(self.PSF[hcyl])
+        self.PSF[np.logical_not(incyl)] = background
+
+        return background
+
+
+    def retrievePF(self, dz, psf_diam, nIt):
+        z_offset, zz = psf_zplane(self.PSF, dz, self.l/3.2) # This should be the reason!!!! >_<
+        A = self.PF.plane
+        Mx, My = np.meshgrid(np.arange(self.nx)-self.nx/2., np.arange(self.nx)-self.nx/2.)
+        background = self.background_reset(mask = 22, psf_diam = self.PF.k_pxl)
         print( "   background = ", background)
         print( "   z_offset = ", z_offset)
         PSF_sample = self.PSF
         zs = zz-z_offset
-        complex_PF = self.PF.psf2pf(PSF_sample, zs, background, A, self.nIt)
+        self.cz = int(-zs[0]//dz)
+        complex_PF = self.PF.psf2pf(PSF_sample, zs, background, A, nIt)
         Pupil_final = _PupilFunction(complex_PF, self.PF)
         self.pf_complex = Pupil_final.complex
         self.pf_phase = unwrap_phase(Pupil_final.phase)
@@ -112,7 +136,11 @@ class Core(object):
         strehl = c_up/c_down
         return strehl
 
-
+    def shutDown(self):
+        '''
+        what should I fill here?
+        '''
+        pass
 
 class _PupilFunction(object):
     '''

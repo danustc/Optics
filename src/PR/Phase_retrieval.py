@@ -19,7 +19,10 @@ from psf_tools import psf_zplane
 # a small zernike function
 
 class PSF_PF(object):
-    def __init__(self, PSF, dx, dz, ld, nrefrac=1.33, NA=1.0, fl=9000, nIt=10):
+    def __init__(self, PSF, dx, dz, ld, lstep = None, nrefrac=1.33, NA=1.0, fl=9000, nIt=10):
+        '''
+        lstep: [N of wavelengths, steps of wavelengths]
+        '''
         self.dx = dx
         self.dz = dz
         self.l =ld  #wavelength 
@@ -30,25 +33,44 @@ class PSF_PF(object):
         self.PSF = PSF
         self.nz, self.ny, self.nx = self.PSF.shape
         print(self.nz, self.ny, self.nx)
-        self.PF=pupil.Simulation(self.nx,dx,ld,nrefrac,NA,fl,wavelengths=1) # initialize the pupil function
+        if lstep is None:
+            wls = 1
+            wstep = 0.005
+        else:
+            wls = lstep[0]
+            wstep = lstep[1]
+        self.PF=pupil.Simulation(self.nx,dx,ld,nrefrac,NA,fl,wavelengths=wls, wave_step = wstep) # initialize the pupil function
         in_pupil = self.PF.k < self.PF.k_max
         self.NK = in_pupil.sum()
         print("# pixels inside the pupil:", self.NK)
 
-    def retrievePF(self, bscale = 1.00, psf_diam = 50, resample = None):
-        # an ultrasimplified version
-        # comment on 08/12: I am still not convinced of the way of setting background. 
+    def background_reset(self, mask, psf_diam = 50):
+        '''
+        reset the background of the PSF
+        '''
+        Mx, My = np.meshgrid(np.arange(self.nx)-self.nx/2., np.arange(self.nx)-self.nx/2.)
+        r_pxl = _msqrt(Mx**2 + My**2)
+        bk_inner = psf_diam
+        bk_outer = mask
+        hcyl = np.array(self.nz*[np.logical_and(r_pxl>=bk_inner, r_pxl<bk_outer+1)])
+        incyl = np.array(self.nz*[r_pxl<60])
+        background = np.mean(self.PSF[hcyl])
+        self.PSF[np.logical_not(incyl)] = background
 
+        return background
+
+    def retrievePF(self, bscale = 1.00, psf_diam = 50, resample = None):
 
         z_offset, zz = psf_zplane(self.PSF, self.dz, self.l/3.2) # This should be the reason!!!! >_<
         A = self.PF.plane
 #         z_offset = -z_offset # To deliberately add something wrong
         Mx, My = np.meshgrid(np.arange(self.nx)-self.nx/2., np.arange(self.nx)-self.nx/2.)
-        r_pxl = _msqrt(Mx**2 + My**2)
-        bk_inner = 16
-        bk_outer = 20
-        hcyl = np.array(self.nz*[np.logical_and(r_pxl>=bk_inner, r_pxl<bk_outer)])
-        background = np.mean(self.PSF[hcyl])*bscale
+        #r_pxl = _msqrt(Mx**2 + My**2)
+        #bk_inner = psf_diam*1.0
+        #bk_outer = psf_diam*1.2
+        #hcyl = np.array(self.nz*[np.logical_and(r_pxl>=bk_inner, r_pxl<bk_outer)])
+        #incyl = np.array(self.nz*[r_pxl<60])
+        background = self.background_reset(mask = 60)
         print( "   background = ", background)
         print( "   z_offset = ", z_offset)
         if(resample == False):

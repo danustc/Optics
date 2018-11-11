@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def IMshow_pupil(pupil, axnum = True):
+def IMshow_pupil(pupil, axnum = True, title = None):
     '''
     display a pupil function in 2D
     '''
@@ -28,7 +28,10 @@ def IMshow_pupil(pupil, axnum = True):
         # fig.axes.get_yaxis().set_visible(False)
     pcm = ax.pcolor(MX, MY, pupil, cmap = 'RdYlBu_r')
     fig.colorbar(pcm, ax = ax, extend='max')
+    if title is not None:
+        ax.set_title(title)
 
+    plt.tight_layout()
     return fig  # return the figure handle
 
 
