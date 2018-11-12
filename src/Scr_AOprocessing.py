@@ -41,10 +41,11 @@ def pupil_crop(raw_pupil, mask = True, rad = 49):
 
 
 
-def load_folder_psf(folder, flag = 'mod', dz = 0.40, dr = 0.102, verbose = False):
+def load_folder_psf(folder, flag = 'mod', dz = 0.40, dr = 0.108, verbose = False):
     psf_list = glob.glob(folder+ '*'+flag+'*.npy')
     psf_list.sort(key = os.path.getmtime)
     n_psf = len(psf_list)
+    print(n_psf)
     FWHM = []
 
     for fname in psf_list:
@@ -58,7 +59,8 @@ def load_folder_psf(folder, flag = 'mod', dz = 0.40, dr = 0.102, verbose = False
         figv.savefig(folder + session_name+'_line')
         FWHM.append(fwhm)
 
-        psf_yz = psf_slice(psf_stack, dim_slice = 2, trunc = 40)
+        print(psf_stack.shape)
+        psf_yz = psf_slice(psf_stack, dim_slice = 1, trunc = 40)
         range_z = dz*psf_yz.shape[0]
         range_r = dr*psf_yz.shape[1]
 
@@ -109,8 +111,9 @@ def load_fwhm(folder, flag = 'fwhm'):
 
 
 def main():
-    date_folder = 'May08_2017/'#T0_second_round/'
-    FWHM = load_folder_psf(path_root+date_folder, flag = 'CM*mod')
+    date_folder = 'Jun282018/'#T0_second_round/'
+    #date_folder = 'May02_2017/T0_third_round/'
+    FWHM = load_folder_psf(path_root+date_folder, flag = 'N_')
     print(FWHM)
 
     np.save(path_root+date_folder+ 'FWHM_MT', np.array(FWHM))

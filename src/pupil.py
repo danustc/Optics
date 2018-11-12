@@ -106,7 +106,6 @@ class Pupil(object):
 
 
     def get_sli_pupil_function(self, z0, n_photons, dmf=0, tilt=(0,0)):
-        
         '''
         Computes the pupil function of a point source in front of a mirror.
 

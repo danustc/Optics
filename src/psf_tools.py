@@ -62,10 +62,10 @@ def psf_slice(stack, dim_slice = 0, n_slice = None, trunc = 50):
     """
 
     hy, hx = stack.shape[1:]
-    hy/=2
-    hx/=2
+    hy//=2
+    hx//=2
     if n_slice is None:
-        n_slice = stack.shape[dim_slice]/2 # take from the middle
+        n_slice = int(stack.shape[dim_slice]/2) # take from the middle
 
     if (dim_slice == 0):
         # take an xy slice on
@@ -74,8 +74,10 @@ def psf_slice(stack, dim_slice = 0, n_slice = None, trunc = 50):
         # take an xz slice
         pslice = stack[:, n_slice, hx-trunc:hx+trunc]
     else:
+        print(hy, trunc, n_slice)
         # take an yz slice
         pslice = stack[:,hy-trunc:hy+trunc,n_slice]
+
 
     return pslice
     # end of psf_slice
